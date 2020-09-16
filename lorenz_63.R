@@ -26,7 +26,7 @@ ludfun <- function(state) {
     if (is.positive.semi.definite(Sigma) == FALSE)
         return(-Inf)
 
-    X_t = X_n[, seq(1, N + 1, N / K)]
+    X_t = X_n[, seq(2, N + 1, N / K)]
     inv_R = solve(R)
 
     # pi is the log of likelihood
@@ -88,11 +88,11 @@ N = (tf - to) / del_t                                   # no of discretizations 
 R = diag(2,3)                                           # observational error
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10,28, 8/3), diag(6,3)) # generating sample from Lorenz-63
-Y = X[, seq(1, N + 1, N / K)] + t(rmvnorm(K + 1, mean = rep(0, 3), sigma = R))   # observations from Lorenz-63
+Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K , mean = rep(0, 3), sigma = R))   # observations from Lorenz-63
 init = runif(3 * N + 12, 0, 5)                                                   # random initial values for MCMC
 init[(3*N + 7):(3*N + 12)] = c(1,0,0,1,0,1)                                      # inital \Sigma should also be positive semi definite
 
-chain = metrop(ludfun, init, nbatch = 1e3, scale = 0.2)                          # running MH
+chain = metrop(ludfun, init, nbatch = 1e5, scale = 0.2)                          # running MH
 
 #R = diag(2, nrow = 3)
 #inv_R = solve(R)

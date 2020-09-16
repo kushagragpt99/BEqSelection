@@ -46,7 +46,7 @@ ludfun <- function(state) {
         return(-Inf)
     }
 
-    X_t = X_n[, seq(1, N + 1, N / K)]
+    X_t = X_n[, seq(2, N + 1, N / K)]
     inv_R = solve(R)
 
     # pi is the log of likelihood
@@ -89,6 +89,61 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
 }
 # X = euler_maruyama(c(1,1,1), 0.1, 20, c(1,2,3), diag(2,3))
 
+component_wise_MH <- function(init, iter, hx, htheta, hsigma) {
+    X_n = matrix(state[1:(40 * (N + 1))], nrow = 40, ncol = N + 1)
+    Sigma_vec = state[(40 * N + 42):(40 * N + 41 + 820)]
+    Sigma = make_Sigma(Sigma_vec, 40)
+    theta = state[40 * N + 41] # vector of \sigma, \rho and \beta
+    MH_chain = matrix(, nrow = iter, ncol = nparam)
+    MH_chain[1,] = init
+    accept.prob = rep(0, n.sigma + 2)
+
+    for (i in 2:iter) {
+
+
+        # all Xs treated as one component
+        prop.X = c(rmvnorm(1, mean = MH_chain[i - 1, 1:n.X], sigma = diag(hx, n.X)), MH_chain[i - 1, (n.X + 1):n.param])
+        ux <- runif(1)
+        if (log(ux) < (ludfun(prop.X) - ludfun(MH_chain[i - 1,]) )) {
+            MH_chain[i,] = prop.X
+            accept.prob[1] = accept.prob[1] + 1
+        }
+        else
+            MH_chain[i,] = MH_chain[i - 1,]
+
+        # updating theta
+        prop.theta = c(MH_chain[i, (n.X)], rmvnorm(1, mean = MH_chain[i, (n.X + 1):(n.X + n.theta)], sigma = diag(htheta, n.theta)),
+                       MH_chain[i, (n.X + n.theta + 1):n.param])
+        uh <- runif(1)
+        if (log(ux) < (ludfun(prop.theta) - ludfun(MH_chain[i,]))) {
+            MH_chain[i, ] = prop.theta
+            accept.prob[2] = accept.prob[2] + 1
+        }
+
+        #updating sigma
+        prop.sigma_ar = MH_chain[i, (n.X + n.theta + 1):n.param]
+        for (k in 1:n.sigma) {
+            prop.sigma_comp = rnorm(1, mean = MH_chain[i, (n.X + n.theta + k)], sd = sqrt(hsigma))
+            temp = prop.sigma_ar[k]
+            prop.sigma_ar[k] = prop.sigma_comp
+            if (is.positive.semi.definite(make_Sigma(prop.sigma_ar)) == FALSE) {
+                prop.sigma_ar[k] = temp
+            }
+            else {
+                usigma = runif(1)
+                prop.sigma = c(MH_chain[i, (n.X + n.theta + 1):n.param], prop.sigma_ar)
+                if (log(usigma) < (ludfun(prop.sigma) - ludfun(MH_chain[i, ]))) {
+                    MH_chain[i,] = prop.sigma
+                    accept.prob[2+k] = accept.prob[2+k] + 1
+                }
+                else {
+                    prop.sigma_ar[k] = temp
+                }
+            }
+        }
+    }
+}
+
 # hyper-parameters
 to = 0 # initial time
 tf = 10 # final time
@@ -102,9 +157,13 @@ sigma = 2
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
 N = (tf - to) / del_t # no of discretizations of the Lorenz-63, i.e. size of X
 R = diag(1, 40) # observational error
+n.param = 40 * N + 41 + 820
+n.X = 40 * N + 40
+n.theta = 1
+n.sigma = 820
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, 8, diag(2, 40)) # generating sample from Lorenz-63
-Y = X[, seq(1, N + 1, N / K)] + t(rmvnorm(K + 1, mean = rep(0, 40), sigma = R)) # observations from Lorenz-63
+Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 40), sigma = R)) # observations from Lorenz-63
 init = runif(40 * N + 41 + 820, 0, 5) # random initial values for MCMC
 sigma_init = diag(1, 40)
 sigma_init[upper.tri(sigma_init)] <- NA
@@ -113,3 +172,5 @@ sigma_init = sigma_init[!is.na(sigma_init)]
 init[(40 * N + 42):(40 * N + 41 + 820)] = sigma_init # inital \Sigma should also be positive semi definite
 
 chain = metrop(ludfun, init, nbatch = 1e3, scale = 0.01) # running MH
+
+
