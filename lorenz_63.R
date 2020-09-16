@@ -15,9 +15,10 @@ ludfun <- function(state) {
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
 
     X_n = matrix(state[1:(3 * (N + 1))], nrow = 3, ncol = N + 1)
+    theta = state[(3 * N + 4):(3 * N + 6)]  # vector of \sigma, \rho and \beta    
     Sigma_vec = state[(3 * N + 7):(3 * N + 12)]
     Sigma = matrix(c(Sigma_vec[1], Sigma_vec[2], Sigma_vec[3], Sigma_vec[2], Sigma_vec[4], Sigma_vec[5], Sigma_vec[3], Sigma_vec[5], Sigma_vec[6]), nrow = 3)
-    theta = state[(3 * N + 4):(3 * N + 6)]  # vector of \sigma, \rho and \beta
+    
 
     # all the elements of theta should be positive
     if (min(theta) <= 0)
@@ -26,10 +27,12 @@ ludfun <- function(state) {
     if (is.positive.semi.definite(Sigma) == FALSE)
         return(-Inf)
 
+    # Euler - Muryami approximation expansions
     X_t = X_n[, seq(2, N + 1, N / K)]
-    inv_R = solve(R)
+    inv_R = solve(R)  # can be global
 
     # pi is the log of likelihood
+    # This doesn't need a loop
     p1 = 0
     for (k in 1:K) {
         Y.t = t(t(Y[, k]))
@@ -43,19 +46,23 @@ ludfun <- function(state) {
     
     inv_Sig = solve(Sigma)
     for (k in 1:N) {
-        del_X = matrix(X_n[, k + 1] - X_n[, k], nrow = 3, ncol = 1)
+        del_X = matrix(X_n[, k + 1] - X_n[, k], nrow = 3, ncol = 1)  # try using diff() function
         f_k = drift_fun(X[, k], theta)
         #print(dim(del_X))
         #print(dim(f_k))
         p2 = p2 + t(del_X/del_t - f_k) %*% inv_Sig %*% (del_X/del_t - f_k)
     }
     p2 = -0.5 * p2
-    p2 = p2 - 0.5 * t(t(t(X_n[,1])) - tau_o) %*% solve(lam_o) %*% (t(t(X_n[,1])) - tau_o) - (N / 2) * log(det(Sigma * del_t))
 
-    # p3 is the lof og priors of theta
+    # store inv.lam_o globally
+    p2 = p2 - 0.5 * t( t(t(X_n[,1])) - tau_o ) %*% solve(lam_o) %*% (t(t(X_n[,1])) - tau_o) - (N / 2) * determinant(Sigma * del_t, logarithm = TRUE)$modulus
+
+    # p3 is the log of priors of theta
     p3 = (alpha1 - 1) * log(theta[1]) - theta[1] / beta1 + (alpha2 - 1) * log(theta[2]) - theta[2] / beta2 + (alpha3 - 1) * log(theta[3]) - theta[3] / beta3
 
-    return(p1 + p2 + p3)
+    ## add inverse gamma
+    p4 <- -sum(dgamma(diag(Sigma), shape = 3, scale = 2, log = TRUE))
+    return(p1 + p2 + p3 + p4)
 
 }
 
@@ -64,7 +71,7 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
     X = matrix(, nrow = 3, ncol = N + 1)
     X[, 1] = X0
     for (i in 2:(N + 1))
-        X[, i] = X[, i - 1] + t(drift_fun(X[, i - 1], theta)) * del_t + det(del_t * Sigma) * rmvnorm(1, sigma = diag(1, 3))
+        X[, i] = X[, i - 1] + t(drift_fun(X[, i - 1], theta)) * del_t +  rmvnorm(1, sigma = del_t * Sigma)
     return(X)
 }
 # X = euler_maruyama(c(1,1,1), 0.1, 20, c(1,2,3), diag(2,3))
@@ -89,11 +96,17 @@ R = diag(2,3)                                           # observational error
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10,28, 8/3), diag(6,3)) # generating sample from Lorenz-63
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K , mean = rep(0, 3), sigma = R))   # observations from Lorenz-63
-init = runif(3 * N + 12, 0, 5)                                                   # random initial values for MCMC
-init[(3*N + 7):(3*N + 12)] = c(1,0,0,1,0,1)                                      # inital \Sigma should also be positive semi definite
+init = runif(3 * N + 12, 0, 5)  
+init[(3*N + 4):(3*N + 6)]   <- c(10, 28, 8/3)                                              # random initial values for MCMC
+init[(3*N + 7):(3*N + 12)] = c(6,0,0,6,0,6)                                      # inital \Sigma should also be positive semi definite
 
-chain = metrop(ludfun, init, nbatch = 1e5, scale = 0.2)                          # running MH
+scale <- rep(.2, 6012)
+scale[c(6007, 6010, 6012)] <- 100
+chain = metrop(ludfun, init, nbatch = 1e3, scale = scale)                          # running MH
 
+chain$accept
+out <- chain$batch[ ,6004:6012]
+plot.ts(out)
 #R = diag(2, nrow = 3)
 #inv_R = solve(R)
 #fun <- function(arg1, arg2) {
