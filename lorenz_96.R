@@ -1,7 +1,7 @@
 set.seed(1)
 library(mvtnorm)
-library(matrixcalc)
 library(mcmc)
+library(invgamma)
 
 # drifet function for Lorenz-63
 drift_fun <- function(X, theta) {
@@ -35,19 +35,17 @@ ludfun <- function(state) {
     # State is the vector storing the vectors of length 40*N + 47. The first 40*(N+1) terms are Xs. The next term is the drift partameter \theta. 
     # The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
 
-    X_n = matrix(state[1:(40 * (N + 1))], nrow = 40, ncol = N + 1)
-    Sigma_vec = state[(40 * N + 42):(40 * N + 41 + 820)]
-    Sigma = make_Sigma(Sigma_vec, 40)
-    theta = state[40*N + 41] # vector of \sigma, \rho and \beta
+    X_n = matrix(state[1:n.X], nrow = 40, ncol = N + 1)
+    theta = state[(n.X + 1):(n.X + n.theta)]
+    Sigma = diag(state[(n.X + n.theta + 1):n.param])
 
     # \Sigma should be positive semi-definite
-    if (is.positive.semi.definite(Sigma) == FALSE) {
+    if (min(state[(n.X + n.theta + 1):n.param]) <= 0) {
         #print("mehh")
         return(-Inf)
     }
 
     X_t = X_n[, seq(2, N + 1, N / K)]
-    inv_R = solve(R)
 
     # pi is the log of likelihood
     p1 = 0
@@ -72,8 +70,8 @@ ludfun <- function(state) {
     p2 = -0.5 * p2
     p2 = p2 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% solve(lam_o) %*% (t(t(X_n[, 1])) - tau_o) - (N / 2) * log(det(Sigma * del_t))
 
-    # p3 is the lof og priors of theta
-    p3 = (theta - mu)^2 / (2* sigma^2)
+    # p3 is the log priors of theta and \Sigma
+    p3 = (theta - mu)^2 / (2 * sigma^2) + sum(dinvgamma(diag(Sigma), shape = 3, scale = 2, log = TRUE))
 
     return(p1 + p2 + p3)
 
@@ -90,16 +88,16 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
 # X = euler_maruyama(c(1,1,1), 0.1, 20, c(1,2,3), diag(2,3))
 
 component_wise_MH <- function(init, iter, hx, htheta, hsigma) {
-    X_n = matrix(state[1:(40 * (N + 1))], nrow = 40, ncol = N + 1)
-    Sigma_vec = state[(40 * N + 42):(40 * N + 41 + 820)]
-    Sigma = make_Sigma(Sigma_vec, 40)
-    theta = state[40 * N + 41] # vector of \sigma, \rho and \beta
+
+    X_n = matrix(state[1:n.X], nrow = 40, ncol = N + 1)
+    theta = state[(n.X + 1):(n.X + n.theta)]
+    Sigma = diag(state[(n.X + n.theta + 1):n.param])
+
     MH_chain = matrix(, nrow = iter, ncol = nparam)
     MH_chain[1,] = init
     accept.prob = rep(0, n.sigma + 2)
 
     for (i in 2:iter) {
-
 
         # all Xs treated as one component
         prop.X = c(rmvnorm(1, mean = MH_chain[i - 1, 1:n.X], sigma = diag(hx, n.X)), MH_chain[i - 1, (n.X + 1):n.param])
@@ -142,6 +140,8 @@ component_wise_MH <- function(init, iter, hx, htheta, hsigma) {
             }
         }
     }
+    ans = list(MH_chain, accept.prob)
+    return(ans)
 }
 
 # hyper-parameters
@@ -157,20 +157,18 @@ sigma = 2
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
 N = (tf - to) / del_t # no of discretizations of the Lorenz-63, i.e. size of X
 R = diag(1, 40) # observational error
-n.param = 40 * N + 41 + 820
+inv_R = solve(R)
+
 n.X = 40 * N + 40
 n.theta = 1
-n.sigma = 820
+n.sigma = 40
+n.param = n.X + n.theta + n.sigma
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, 8, diag(2, 40)) # generating sample from Lorenz-63
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 40), sigma = R)) # observations from Lorenz-63
-init = runif(40 * N + 41 + 820, 0, 5) # random initial values for MCMC
-sigma_init = diag(1, 40)
-sigma_init[upper.tri(sigma_init)] <- NA
-sigma_init = as.vector(sigma_init)
-sigma_init = sigma_init[!is.na(sigma_init)]
-init[(40 * N + 42):(40 * N + 41 + 820)] = sigma_init # inital \Sigma should also be positive semi definite
+init = runif(n.param, 0, 5) # random initial values for MCMC
 
-chain = metrop(ludfun, init, nbatch = 1e3, scale = 0.01) # running MH
-
-
+chain = metrop(ludfun, init, nbatch = 1e4, scale = 0.1) # running MH
+out = chain$batch
+print(chain$accept)
+print(mean(out[, n.X + 1]))

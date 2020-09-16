@@ -2,6 +2,7 @@ set.seed(1)
 library(mvtnorm)
 library(matrixcalc)
 library(mcmc)
+library(invgamma)
 
 # drifet function for Lorenz-63
 drift_fun <- function(X, theta) {
@@ -14,11 +15,10 @@ ludfun <- function(state) {
     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
 
-    X_n = matrix(state[1:(3 * (N + 1))], nrow = 3, ncol = N + 1)
-    theta = state[(3 * N + 4):(3 * N + 6)]  # vector of \sigma, \rho and \beta    
-    Sigma_vec = state[(3 * N + 7):(3 * N + 12)]
-    Sigma = matrix(c(Sigma_vec[1], Sigma_vec[2], Sigma_vec[3], Sigma_vec[2], Sigma_vec[4], Sigma_vec[5], Sigma_vec[3], Sigma_vec[5], Sigma_vec[6]), nrow = 3)
-    
+    X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
+    theta = state[(n.X + 1):(n.X + n.theta)]  # vector of \sigma, \rho and \beta    
+    #Sigma_vec = state[(3 * N + 7):(3 * N + 12)]
+    Sigma = diag(state[(n.X + n.theta + 1):n.param])
 
     # all the elements of theta should be positive
     if (min(theta) <= 0)
@@ -29,7 +29,7 @@ ludfun <- function(state) {
 
     # Euler - Muryami approximation expansions
     X_t = X_n[, seq(2, N + 1, N / K)]
-    inv_R = solve(R)  # can be global
+    
 
     # pi is the log of likelihood
     # This doesn't need a loop
@@ -55,13 +55,13 @@ ludfun <- function(state) {
     p2 = -0.5 * p2
 
     # store inv.lam_o globally
-    p2 = p2 - 0.5 * t( t(t(X_n[,1])) - tau_o ) %*% solve(lam_o) %*% (t(t(X_n[,1])) - tau_o) - (N / 2) * determinant(Sigma * del_t, logarithm = TRUE)$modulus
+    p2 = p2 - 0.5 * t( t(t(X_n[,1])) - tau_o ) %*% inv.lam_o %*% (t(t(X_n[,1])) - tau_o) - (N / 2) * determinant(Sigma * del_t, logarithm = TRUE)$modulus
 
     # p3 is the log of priors of theta
     p3 = (alpha1 - 1) * log(theta[1]) - theta[1] / beta1 + (alpha2 - 1) * log(theta[2]) - theta[2] / beta2 + (alpha3 - 1) * log(theta[3]) - theta[3] / beta3
 
     ## add inverse gamma
-    p4 <- -sum(dgamma(diag(Sigma), shape = 3, scale = 2, log = TRUE))
+    p4 <- sum(dinvgamma(diag(Sigma), shape = 3, scale = 2, log = TRUE))
     return(p1 + p2 + p3 + p4)
 
 }
@@ -82,7 +82,8 @@ tf = 20                                                 # final time
 Nobs = 10                                               # no of observations (Y) per time step
 del_t = 0.01                                            # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1)           # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-lam_o = diag(1, 3)                                      # prior covariance matrix of X[0]
+lam_o = diag(1, 3) # prior covariance matrix of X[0]
+inv.lam_o = solve(lam_o)
 alpha1 = 20                                             # Prior for \sigma is Gamma (alpha1, beta1)
 alpha2 = 56                                             # Prior for \rho is Gamma (alpha2, beta2)
 alpha3 = 6                                              # Prior for \beta is Gamma (alpha3, beta3)
@@ -92,20 +93,26 @@ beta3 = 0.5
 
 K = (tf - to) * Nobs                                    # no of real life observations, i.e. size of Y
 N = (tf - to) / del_t                                   # no of discretizations of the Lorenz-63, i.e. size of X
-R = diag(2,3)                                           # observational error
+R = diag(2, 3) # observational error
+inv_R = solve(R)
+n.X = 3 * (N + 1)
+n.theta = 3
+n.sigma = 3
+n.param = n.X + n.theta + n.sigma
+
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10,28, 8/3), diag(6,3)) # generating sample from Lorenz-63
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K , mean = rep(0, 3), sigma = R))   # observations from Lorenz-63
-init = runif(3 * N + 12, 0, 5)  
-init[(3*N + 4):(3*N + 6)]   <- c(10, 28, 8/3)                                              # random initial values for MCMC
-init[(3*N + 7):(3*N + 12)] = c(6,0,0,6,0,6)                                      # inital \Sigma should also be positive semi definite
+init = runif(n.param, 0, 5)  
+init[(n.X + 1):(n.X + n.theta)]   <- c(10, 28, 8/3)                                              # random initial values for MCMC
+#init[(3*N + 7):(3*N + 12)] = c(6,0,0,6,0,6)                                      # inital \Sigma should also be positive semi definite
 
-scale <- rep(.2, 6012)
-scale[c(6007, 6010, 6012)] <- 100
-chain = metrop(ludfun, init, nbatch = 1e3, scale = scale)                          # running MH
+scale <- rep(.2, n.param)
+#scale[c(6007, 6010, 6012)] <- 100
+chain = metrop(ludfun, init, nbatch = 1e4, scale = scale)                          # running MH
 
 chain$accept
-out <- chain$batch[ ,6004:6012]
+out <- chain$batch[ ,(n.X + 1):n.param]
 plot.ts(out)
 #R = diag(2, nrow = 3)
 #inv_R = solve(R)
