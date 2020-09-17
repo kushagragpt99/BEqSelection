@@ -62,7 +62,7 @@ ludfun <- function(state) {
     inv_Sig = solve(Sigma)
     for (k in 1:N) {
         del_X = matrix(X_n[, k + 1] - X_n[, k], nrow = 40, ncol = 1)
-        f_k = drift_fun(X[, k], theta)
+        f_k = drift_fun(X_n[, k], theta)
         #print(dim(del_X))
         #print(dim(f_k))
         p2 = p2 + t(del_X / del_t - f_k) %*% inv_Sig %*% (del_X / del_t - f_k)
