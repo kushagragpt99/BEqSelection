@@ -31,23 +31,29 @@ make_Sigma <- function(sigma_ar, n) {
 #make_Sigma(1:10, 4)
 
 # logarithm of the unnormalized posterior
+# logarithm of the unnormalized posterior
 ludfun <- function(state) {
-    # State is the vector storing the vectors of length 40*N + 47. The first 40*(N+1) terms are Xs. The next term is the drift partameter \theta. 
-    # The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
+    # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
+    # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
 
     X_n = matrix(state[1:n.X], nrow = 40, ncol = N + 1)
-    theta = state[(n.X + 1):(n.X + n.theta)]
-    Sigma = diag(state[(n.X + n.theta + 1):n.param])
+    theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
+    #Sigma_vec = state[(3 * N + 7):(3 * N + 12)]
+    Sigma = diag(state[(n.X + n.theta + 1):n.param], 40)
 
-    # \Sigma should be positive semi-definite
-    if (min(state[(n.X + n.theta + 1):n.param]) <= 0) {
-        #print("mehh")
+    # all the elements of theta should be positive
+    if (min(theta) <= 0)
         return(-Inf)
-    }
+    # \Sigma should be positive semi-definite
+    if (min(diag(Sigma)) < 0)
+        return(-Inf)
 
+    # Euler - Muryami approximation expansions
     X_t = X_n[, seq(2, N + 1, N / K)]
 
+
     # pi is the log of likelihood
+    # This doesn't need a loop
     p1 = 0
     for (k in 1:K) {
         Y.t = t(t(Y[, k]))
@@ -56,24 +62,37 @@ ludfun <- function(state) {
     }
     p1 = -0.5 * p1
 
+    #######################################################################
+    # p1 = sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))
+    ######################################################################
+
     # p2 is the log of prior of X conditional on theta
     p2 = 0
-
     inv_Sig = solve(Sigma)
     for (k in 1:N) {
-        del_X = matrix(X_n[, k + 1] - X_n[, k], nrow = 40, ncol = 1)
+        del_X = matrix(X_n[, k + 1] - X_n[, k], nrow = 40, ncol = 1) # try using diff() function
         f_k = drift_fun(X_n[, k], theta)
         #print(dim(del_X))
         #print(dim(f_k))
         p2 = p2 + t(del_X / del_t - f_k) %*% inv_Sig %*% (del_X / del_t - f_k)
     }
-    p2 = -0.5 * p2
-    p2 = p2 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% solve(lam_o) %*% (t(t(X_n[, 1])) - tau_o) - (N / 2) * log(det(Sigma * del_t))
+    p2 = -0.5 * p2 * del_t
 
-    # p3 is the log priors of theta and \Sigma
-    p3 = (theta - mu)^2 / (2 * sigma^2) + sum(dinvgamma(diag(Sigma), shape = 3, scale = 2, log = TRUE))
+    ########################################################################
+    #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, theta)
+    #del_X = t(diff(t(X_n)))
+    #p2 = sum(dmvnorm(t(del_X - f[, - (N + 1)] * del_t), sigma = Sigma * del_t, log = TRUE))
+    ########################################################################
 
-    return(p1 + p2 + p3)
+    # store inv.lam_o globally
+    p2 = p2 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o) - (N / 2) * determinant(Sigma * del_t, logarithm = TRUE)$modulus
+
+    # p3 is the log of priors of theta
+    p3 = dnorm(theta, sd = 2, log = TRUE)
+
+    ## add inverse gamma
+    p4 <- sum(dinvgamma(diag(Sigma), shape = 2, scale = 1/2 , log = TRUE))
+    return(p1 + p2 + p3 + p4)
 
 }
 
@@ -82,7 +101,7 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
     X = matrix(, nrow = 40, ncol = N + 1)
     X[, 1] = X0
     for (i in 2:(N + 1))
-        X[, i] = X[, i - 1] + t(drift_fun(X[, i - 1], theta)) * del_t + det(del_t * Sigma) * rmvnorm(1, sigma = diag(1, 40))
+        X[, i] = X[, i - 1] + t(drift_fun(X[, i - 1], theta)) * del_t + rmvnorm(1, sigma = del_t * Sigma)
     return(X)
 }
 # X = euler_maruyama(c(1,1,1), 0.1, 20, c(1,2,3), diag(2,3))
@@ -151,6 +170,7 @@ Nobs = 8 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 40), nrow = 40, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
 lam_o = diag(1, 40) # prior covariance matrix of X[0]
+inv.lam_o = solve(lam_o)
 mu = 8
 sigma = 2
 
@@ -168,7 +188,9 @@ X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, 8, diag(2, 40)) # generat
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 40), sigma = R)) # observations from Lorenz-63
 init = runif(n.param, 0, 5) # random initial values for MCMC
 
-chain = metrop(ludfun, init, nbatch = 1e4, scale = 0.1) # running MH
+chain = metrop(ludfun, init, nbatch = 1e3, scale = 0.1) # running MH
+
 out = chain$batch
 print(chain$accept)
 print(mean(out[, n.X + 1]))
+plot.ts(out[, n.X + 1])

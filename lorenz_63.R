@@ -70,7 +70,7 @@ ludfun <- function(state) {
     p3 = (alpha1 - 1) * log(theta[1]) - theta[1] / beta1 + (alpha2 - 1) * log(theta[2]) - theta[2] / beta2 + (alpha3 - 1) * log(theta[3]) - theta[3] / beta3
 
     ## add inverse gamma
-    p4 <- sum(dinvgamma(diag(Sigma), shape = 3, scale = 1/2, log = TRUE))
+    p4 <- sum(dinvgamma(diag(Sigma), shape = 2, scale = 1/6, log = TRUE))
     return(p1 + p2 + p3 + p4)
 
 }
