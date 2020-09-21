@@ -18,13 +18,13 @@ ludfun <- function(state) {
     X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
     theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
     #Sigma_vec = state[(3 * N + 7):(3 * N + 12)]
-    Sigma = diag(state[(n.X + n.theta + 1):n.param])
+    Sigma = diag(state[(n.X + n.theta + 1):n.param], 3)
 
     # all the elements of theta should be positive
     if (min(theta) <= 0)
         return(-Inf)
     # \Sigma should be positive semi-definite
-    if (is.positive.semi.definite(Sigma) == FALSE)
+    if (min(diag(Sigma)) < 0)
         return(-Inf)
 
     # Euler - Muryami approximation expansions
@@ -47,20 +47,20 @@ ludfun <- function(state) {
 
     # p2 is the log of prior of X conditional on theta
     p2 = 0
-    inv_Sig = solve(Sigma*del_t)
+    inv_Sig = solve(Sigma)
     for (k in 1:N) {
         del_X = matrix(X_n[, k + 1] - X_n[, k], nrow = 3, ncol = 1) # try using diff() function
-        f_k = drift_fun(X[, k], theta)
+        f_k = drift_fun(X_n[, k], theta)
         #print(dim(del_X))
         #print(dim(f_k))
         p2 = p2 + t(del_X / del_t - f_k) %*% inv_Sig %*% (del_X / del_t - f_k)
     }
-    p2 = -0.5 * p2
+    p2 = -0.5 * p2 * del_t
 
     ########################################################################
     #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, theta)
     #del_X = t(diff(t(X_n)))
-    #p2 = sum(dmvnorm(t(del_X / del_t - f[, - (N + 1)]), sigma = Sigma * del_t, log = TRUE))
+    #p2 = sum(dmvnorm(t(del_X - f[, - (N + 1)] * del_t), sigma = Sigma * del_t, log = TRUE))
     ########################################################################
 
     # store inv.lam_o globally
@@ -114,7 +114,7 @@ X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10, 28, 8 / 3), diag(6,
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
-init[(n.X + n.theta + 1):(n.param)] = c(6,6,6)                                      # inital \Sigma should also be positive semi definite
+init[(n.X + n.theta + 1):(n.param)] = 6                                      # inital \Sigma should also be positive semi definite
 
 scale <- rep(.2, n.param)
 #scale[c(6007, 6010, 6012)] <- 100
