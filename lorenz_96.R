@@ -186,11 +186,27 @@ n.param = n.X + n.theta + n.sigma
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, 8, diag(2, 40)) # generating sample from Lorenz-63
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 40), sigma = R)) # observations from Lorenz-63
-init = runif(n.param, 0, 5) # random initial values for MCMC
+init = numeric(n.param)
+init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
+init[(n.X + 1):(n.X + n.theta)] <- 8 # random initial values for MCMC
+init[(n.X + n.theta + 1):(n.param)] = 2 # inital \Sigma should also be positive semi definite
 
-chain = metrop(ludfun, init, nbatch = 1e3, scale = 0.1) # running MH
+scale <- rep(.001, n.param)
+scale[(n.X + 1):(n.X + n.theta)] <- .05
+scale[(n.X + n.theta + 1):(n.param)] <- .02
+#scale[c(6007, 6010, 6012)] <- 100
+chain = metrop(ludfun, init, nbatch = 2e4, scale = scale) # running MH
+save(chain, file = "L96_2e4.Rdata")
+chain$accept
+out <- chain$batch[, (n.X + 1):n.param]
+plot.ts(out[, 1:4])
+print(colMeans(out))
 
-out = chain$batch
-print(chain$accept)
-print(mean(out[, n.X + 1]))
-plot.ts(out[, n.X + 1])
+
+
+
+#pdf("plot.pdf", height = 6, width = 6)
+#plot.ts(out[, n.X + 1])
+
+#dev.off()
+
