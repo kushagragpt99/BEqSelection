@@ -195,7 +195,7 @@ scale <- rep(.001, n.param)
 scale[(n.X + 1):(n.X + n.theta)] <- .05
 scale[(n.X + n.theta + 1):(n.param)] <- .02
 #scale[c(6007, 6010, 6012)] <- 100
-chain = metrop(ludfun, init, nbatch = 2e4, scale = scale) # running MH
+chain = metrop(ludfun, init, nbatch = 4e4, scale = scale) # running MH
 save(chain, file = "L96_2e4.Rdata")
 chain$accept
 out <- chain$batch[, (n.X + 1):n.param]
