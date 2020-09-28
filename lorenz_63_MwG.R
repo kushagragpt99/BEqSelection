@@ -154,7 +154,7 @@ MwG_update <- function(state, h) {
 
     }
 
-    X_n[, N + 1] = rmvnorm(1, X_n[, N] - t(drift_fun(X_n[, N], theta)), del_t * Sigma_mat)
+    X_n[, N + 1] = rmvnorm(1, X_n[, N] + t(drift_fun(X_n[, N], theta)*del_t), del_t * Sigma_mat)
 
     #X_n = t(X_n)
     # update for theta
@@ -171,9 +171,9 @@ MwG_update <- function(state, h) {
     f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, theta)
     del_X = t(diff(t(X_n)))
     beta_tmp = rowSums((del_X / del_t - f[, - (N + 1)]) ^ 2) * del_t / 2
-    Sigma[1] = rgamma(1, shape = N / 2 + 2, rate = 6 + beta_tmp[1])
-    Sigma[2] = rgamma(1, shape = N / 2 + 2, rate = 6 + beta_tmp[2])
-    Sigma[3] = rgamma(1, shape = N / 2 + 2, rate = 6 + beta_tmp[3])
+    Sigma[1] = 1/rgamma(1, shape = N / 2 + 2, rate = 6 + beta_tmp[1])
+    Sigma[2] = 1/rgamma(1, shape = N / 2 + 2, rate = 6 + beta_tmp[2])
+    Sigma[3] = 1/rgamma(1, shape = N / 2 + 2, rate = 6 + beta_tmp[3])
 
     update = c(as.vector(X_n), theta, Sigma)
     return(update)
@@ -193,7 +193,7 @@ MwG <- function(init, n, h) {
         X_avg = X_avg * (t - 1) / t + new_update[1:n.X] / t
         old_update = new_update
     }
-    final_output = list(param_mat, X_sum)
+    final_output = list(param_mat, X_avg)
 }
 
 # Numerical method to sample from SDE
