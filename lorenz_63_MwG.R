@@ -187,7 +187,7 @@ MwG <- function(init, n, h) {
     param_mat = matrix(, nrow = n, ncol = 6)
 
     for (t in 1:n) {
-        #print(t)
+        if(t %%100 == 0) print(t)
         new_update = MwG_update(old_update, h)
         param_mat[t,] = new_update[(n.X + 1):n.param]
         X_avg = X_avg * (t - 1) / t + new_update[1:n.X] / t
@@ -241,5 +241,6 @@ init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 init[(n.X + n.theta + 1):(n.param)] = 6 # inital \Sigma should also be positive semi definite
 
-ans = MwG(init, 1e2, 0.2)
+ans = MwG(init, 2e5, 0.02)
 
+save(ans, file = "l63mwg")

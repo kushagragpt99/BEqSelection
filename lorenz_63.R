@@ -112,6 +112,7 @@ n.param = n.X + n.theta + n.sigma
 
 X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
+init = numeric(n.param)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 init[(n.X + n.theta + 1):(n.param)] = 6                                      # inital \Sigma should also be positive semi definite
@@ -127,3 +128,4 @@ out <- chain$batch[, (n.X + 1):n.param]
 plot.ts(out)
 print(colMeans(out))
 
+save(out, file = "l63MH")

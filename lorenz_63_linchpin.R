@@ -132,4 +132,6 @@ init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 
-ans = linchpin(1e2, init)
+ans = linchpin(1e4, init)
+
+save(ans, file = "l63_linch")
