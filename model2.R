@@ -18,6 +18,10 @@ drift_fun <- function(X, t, B) {
     return(ans)
 }
 
+drift_fun_true <- function(X, theta) {
+    ans = c(theta[1] * (X[2] - X[1]), theta[2] * X[1] - X[2] - X[1] * X[3], X[1] * X[2] - theta[3] * X[3])
+    return(t(t(ans)))
+}
 
 ludfun <- function(state) {
     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
@@ -72,16 +76,17 @@ linchpin <- function(n, init) {
     scale[n.X + non_zero] = 0.01
     scale[n.X + c(24, 29)] = 0.002
     scale[n.X + 8] = 0.005
-    scale[n.X + c(5)] = 0.03  # 0.05
-    scale[n.X + c(4,7)] = 0.08
+    scale[n.X + c(5)] = 0.1  # 0.05
+    scale[n.X + c(4, 7)] = 0.08
+    scale[n.X+4] = 0.5
     scale[n.X+12] = 0.02
-    #accept.prob = 0
-    chain = metrop(ludfun, init, n, scale = scale)
-    print(chain$accept)
+    accept.prob = 0
+    #chain = metrop(ludfun, init, n, scale = scale)
+    #print(chain$accept)
     for (i in 1:n) {
-        #chain = metrop(ludfun, init, 1, scale = scale)
-        state = chain$batch[i,]
-        #accept.prob = accept.prob + chain$accept
+        chain = metrop(ludfun, init, 1, scale = scale)
+        state = chain$batch
+        accept.prob = accept.prob + chain$accept
         X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
         theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta 
         X_avg = X_avg + state[1:n.X]
@@ -96,9 +101,9 @@ linchpin <- function(n, init) {
         Sigma[3] = rinvgamma(1, shape = N / 2 + a4, rate = b4 + beta_tmp[3])
 
         param_mat[i, (n.theta+1):(n.theta + n.sigma)] = Sigma
-        #init = state
+        init = state
     }
-
+    print(accept.prob/n)
     X_avg = X_avg / n
     final_output = list(param_mat, X_avg)
     return(final_output)
@@ -110,7 +115,7 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
     X = matrix(, nrow = 3, ncol = N + 1)
     X[, 1] = X0
     for (i in 2:(N + 1))
-        X[, i] = X[, i - 1] + t(drift_fun(X[, i - 1], theta)) * del_t + rmvnorm(1, sigma = del_t * Sigma)
+        X[, i] = X[, i - 1] + t(drift_fun_true(X[, i - 1], theta)) * del_t + rmvnorm(1, sigma = del_t * Sigma)
     return(X)
 }
 # X = euler_maruyama(c(1,1,1), 0.1, 20, c(1,2,3), diag(2,3))
@@ -161,8 +166,8 @@ print(matrix(colMeans(pm), nrow=3))
 plot.ts(pm[, 1:10])
 plot.ts(pm[, 11:20])
 plot.ts(pm[, 21:30])
-plot.ts(pm[, 31:39])
-save(ans, file = "l63_linch_reg_bsv_0001")
+#plot.ts(pm[, 31:39])
+save(ans, file = "l63_linch_reg_bsv_0001_T_20")
 
 #load('l63_linch_reg')
 #pm = ans[[1]]
