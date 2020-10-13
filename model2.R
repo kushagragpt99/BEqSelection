@@ -71,19 +71,20 @@ ludfun <- function(state) {
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.001, n.X + n.theta)
+    scale = rep(0.0005, n.X + n.theta)
     #scale[(n.X + 1):(n.X + n.theta)] = 0.005
     scale[n.X + non_zero] = 0.01
     scale[n.X + c(24, 29)] = 0.002
     scale[n.X + 8] = 0.005
-    scale[n.X + c(5)] = 0.1  # 0.05
+    scale[n.X + c(5)] = 0.08  # 0.05
     scale[n.X + c(4, 7)] = 0.08
-    scale[n.X+4] = 0.5
-    scale[n.X+12] = 0.02
+    # scale[n.X+4] = 0.5
+    scale[n.X+12] = 0.01
     accept.prob = 0
     #chain = metrop(ludfun, init, n, scale = scale)
     #print(chain$accept)
     for (i in 1:n) {
+        if(i %% 1e3 == 0) print(c(i, accept.prob/i))
         chain = metrop(ludfun, init, 1, scale = scale)
         state = chain$batch
         accept.prob = accept.prob + chain$accept
