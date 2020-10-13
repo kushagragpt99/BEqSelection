@@ -1,7 +1,7 @@
 
-R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin17.0 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -19,7 +19,7 @@ Type 'q()' to quit R.
 
 > set.seed(1)
 > library(mvtnorm)
-> library(matrixcalc)
+> #library(matrixcalc)
 > library(mcmc)
 > library(invgamma)
 > 
@@ -145,12 +145,12 @@ Type 'q()' to quit R.
 > chain$accept
 [1] 0.1533
 > out <- chain$batch[, (n.X + 1):n.param]
-> plot.ts(out)
+> #plot.ts(out)
 > print(colMeans(out))
 [1]  9.846316 28.088496  2.685439  6.257017  5.956750  6.363525
 > 
-> save(out, file = "l63MH")
+> save(chain, file = "l63_1e4_MH.Rdata")
 > 
 > proc.time()
    user  system elapsed 
-230.211   0.631 231.513 
+293.437   1.702 298.397 

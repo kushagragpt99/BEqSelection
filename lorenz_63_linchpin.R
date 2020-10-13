@@ -1,4 +1,4 @@
-set.seed(1)
+set.seed(1e7)
 library(mvtnorm)
 library(mcmc)
 library(invgamma)
@@ -67,7 +67,7 @@ linchpin <- function(n, init) {
         accept.prob = accept.prob + chain$accept
         X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
         theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta 
-        X_avg = X_avg * (i - 1) / i + state[1:n.X] / i
+        X_avg = X_avg  + state[1:n.X]
         param_mat[i,1:3] = theta
 
         Sigma = numeric(length = 3)
@@ -83,7 +83,7 @@ linchpin <- function(n, init) {
     }
 
     print(accept.prob / n)
-
+    X_avg = X_avg / n
     final_output = list(param_mat, X_avg)
     return(final_output)
 }
@@ -119,6 +119,7 @@ b4 = 6
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
 N = (tf - to) / del_t # no of discretizations of the Lorenz-63, i.e. size of X
+burn_in = 5000/del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 n.X = 3 * (N + 1)
@@ -126,7 +127,9 @@ n.theta = 3
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 
-X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
+#X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
+#X = X_total[, (burn_in):(N + burn_in)]
+load('burninX_1e7')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
@@ -134,4 +137,39 @@ init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for 
 
 ans = linchpin(1e4, init)
 
-save(ans, file = "l63_linch")
+save(ans, file = "l63_linch_burnin_1e7")
+
+#save(X, file = 'burninX')
+load('l63_linch_burnin')
+params = ans[[1]]
+load('burninX')
+Xe = ans[[2]]
+Xe = matrix(Xe, nrow = 3)
+sum((Xe - as.vector(X))^2)
+#pdf("L63_sigma_linchpin_1e4.pdf", height = 6, width = 6)
+#plot(density(params[,1]), ylab = expression(sigma), main = expression(paste('density plot ', sigma)))
+#dev.off()
+
+#pdf("L63_rho_linchpin_1e4.pdf", height = 6, width = 6)
+#plot(density(params[, 2]), ylab = expression(rho), main = expression(paste('density plot ', rho)))
+#dev.off()
+
+#pdf("L63_beta_linchpin_1e4.pdf", height = 6, width = 6)
+#plot(density(params[, 3]), ylab = expression(beta), main = expression(paste('density plot ', beta)))
+#dev.off()
+
+#pdf("L63_Sigma_z_linchpin_1e4.pdf", height = 6, width = 6)
+#plot(density(params[, 6]), ylab = expression(Sigma[z]), main = expression(paste('density plot ', Sigma[z])))
+#dev.off()
+
+#pdf("L63_TS_linchpin_1e4.pdf", height = 6, width = 6)
+#plot.ts(params, main = 'Time series plots')
+#dev.off()
+
+pdf("L63_butterfly_xz_EM_1e4.pdf", height = 6, width = 6)
+plot(X[1,], X[3,], type = 'l', lwd = 2, xlab = 'X(t)', ylab = 'Z(t)', main = 'Euler-Maruyama')
+dev.off()
+
+pdf("L63_butterfly_xz_linchpin_1e4.pdf", height = 6, width = 6)
+plot(Xe[1,], Xe[3,], type = 'l', lwd = 2, xlab = 'X(t)', ylab = 'Z(t)', main = 'Linchpin')
+dev.off()

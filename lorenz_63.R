@@ -1,6 +1,6 @@
 set.seed(1)
 library(mvtnorm)
-library(matrixcalc)
+#library(matrixcalc)
 library(mcmc)
 library(invgamma)
 
@@ -125,7 +125,7 @@ chain = metrop(ludfun, init, nbatch = 1e4, scale = scale) # running MH
 
 chain$accept
 out <- chain$batch[, (n.X + 1):n.param]
-plot.ts(out)
+#plot.ts(out)
 print(colMeans(out))
 
-save(out, file = "l63MH")
+save(chain, file = "l63_1e4_MH.Rdata")
