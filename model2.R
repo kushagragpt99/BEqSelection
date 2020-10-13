@@ -74,10 +74,12 @@ linchpin <- function(n, init) {
     scale = rep(0.0005, n.X + n.theta)
     #scale[(n.X + 1):(n.X + n.theta)] = 0.005
     scale[n.X + non_zero] = 0.01
-    scale[n.X + c(24, 29)] = 0.002
-    scale[n.X + 8] = 0.005
+    scale[n.X + c(24,29)] = 0.002
+    #scale[n.X + c(24)] = 0.005
+    scale[n.X + 8] = 0.008
     scale[n.X + c(5)] = 0.08  # 0.05
     scale[n.X + c(4, 7)] = 0.08
+    #scale[n.X+c(3)] = 0.0008
     # scale[n.X+4] = 0.5
     scale[n.X+12] = 0.01
     accept.prob = 0
@@ -145,7 +147,7 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 2
+sigma2 = 10
 n.X = 3 * (N + 1)
 n.theta = 36
 n.sigma = 3
@@ -161,14 +163,14 @@ init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(rep(0,3), -10, 28, 0, 10, -1, rep
 #init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 non_zero = c(4,5,7,8,12,24,29)
 
-ans = linchpin(1e4, init)
+ans = linchpin(1e5, init)
 pm = ans[[1]]
 print(matrix(colMeans(pm), nrow=3))
 plot.ts(pm[, 1:10])
 plot.ts(pm[, 11:20])
 plot.ts(pm[, 21:30])
 #plot.ts(pm[, 31:39])
-save(ans, file = "l63_linch_reg_bsv_0001_T_20_2")
+save(ans, file = "l63_linch_reg_bsv_0001_T_20_pv_10")
 
 #load('l63_linch_reg')
 #pm = ans[[1]]
@@ -222,3 +224,4 @@ save(ans, file = "l63_linch_reg_bsv_0001_T_20_2")
 #+ scale[n.X + c(5)] = 0.03 # 0.05
 #+ scale[n.X + c(4, 7)] = 0.08
 #+ scale[n.X + 12] = 0.02
+
