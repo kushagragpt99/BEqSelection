@@ -159,11 +159,13 @@ load('burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(rep(0,3), -10, 28, 0, 10, -1, rep(0,3), -8/3, rep(0,11), 1, rep(0,4), -1, rep(0,7)),sigma=diag(0.0001,n.theta))
+#init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(rep(0,3), -10, 28, 0, 10, -1, rep(0,3), -8/3, rep(0,11), 1, rep(0,4), -1, rep(0,7)),sigma=diag(0.0001,n.theta))
 #init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 non_zero = c(4,5,7,8,12,24,29)
 
-ans = linchpin(1e5, init)
+load("l63_linch_reg_bsv_0001_T_20_pv_10")
+init[(n.X + 1):(n.X + n.theta)] <- tail(ans[[1]], 1)
+ans = linchpin(1e6, init)
 pm = ans[[1]]
 print(matrix(colMeans(pm), nrow=3))
 plot.ts(pm[, 1:10])
