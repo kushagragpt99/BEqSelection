@@ -56,7 +56,7 @@ ludfun <- function(state) {
     #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
     ######################################################################
 
-    p2 = (-1/2)*sum((B_vec-mu)^2) / sigma2
+    p2 = (-1/2)*sum((B_vec-mu_truth)^2) / sigma2
 
     f = mapply(drift_fun, X = split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), t = del_t * (0:N), MoreArgs = list(B_vec))
     #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, B_vec, list(1,2))
@@ -72,16 +72,17 @@ linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
     scale = rep(0.0005, n.X + n.theta)
-    #scale[(n.X + 1):(n.X + n.theta)] = 0.005
+    scale[(n.X + 1):(n.X + n.theta)] = 0.002
     scale[n.X + non_zero] = 0.01
-    scale[n.X + c(24,29)] = 0.002
-    #scale[n.X + c(24)] = 0.005
-    scale[n.X + 8] = 0.008
-    scale[n.X + c(5)] = 0.08  # 0.05
-    scale[n.X + c(4, 7)] = 0.08
+    #scale[(n.X + 1):(n.X + 3) ] = 0.001
+    scale[n.X + c(24,29)] = 0.01
+    scale[n.X + c(3,6,14,17,22,23)] = 0.003
+    scale[n.X + 8] = 0.01
+    scale[n.X + c(5)] = 0.1  # 0.05
+    scale[n.X + c(4, 7)] = 0.1
     #scale[n.X+c(3)] = 0.0008
     # scale[n.X+4] = 0.5
-    scale[n.X+12] = 0.01
+    scale[n.X+12] = 0.08
     accept.prob = 0
     #chain = metrop(ludfun, init, n, scale = scale)
     #print(chain$accept)
@@ -126,7 +127,7 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
 
 # hyper-parameters
 to = 0 # initial time
-tf = 20 # final time
+tf = 2 # final time
 Nobs = 10 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
@@ -147,7 +148,8 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 10
+sigma2 = 1
+mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 n.X = 3 * (N + 1)
 n.theta = 36
 n.sigma = 3
@@ -155,11 +157,11 @@ n.param = n.X + n.theta + n.sigma
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('burninX')
+load('burninX_T_2')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(rep(0,3), -10, 28, 0, 10, -1, rep(0,3), -8/3, rep(0,11), 1, rep(0,4), -1, rep(0,7)),sigma=diag(0.0001,n.theta))
+init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,mu_truth,sigma=diag(0.0001,n.theta))
 #init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 non_zero = c(4,5,7,8,12,24,29)
 
@@ -170,7 +172,7 @@ plot.ts(pm[, 1:10])
 plot.ts(pm[, 11:20])
 plot.ts(pm[, 21:30])
 #plot.ts(pm[, 31:39])
-save(ans, file = "l63_linch_reg_bsv_0001_T_20_pv_10")
+save(ans, file = "l63_linch_reg_bsv_0001_T_2_pv_1")
 
 #load('l63_linch_reg')
 #pm = ans[[1]]
