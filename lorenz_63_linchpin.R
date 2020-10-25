@@ -1,4 +1,4 @@
-set.seed(1e7)
+set.seed(1)
 library(mvtnorm)
 library(mcmc)
 library(invgamma)
@@ -106,15 +106,15 @@ tf = 20 # final time
 Nobs = 10 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-lam_o = diag(1, 3) # prior covariance matrix of X[0]
+lam_o = diag(10, 3) # prior covariance matrix of X[0]
 inv.lam_o = solve(lam_o)
 alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
 alpha3 = 6 # Prior for \beta is Gamma (alpha3, beta3)
-beta1 = 0.5
-beta2 = 0.5
-beta3 = 0.5
-a4 = 2
+beta1 = 0.5*2
+beta2 = 0.5*2
+beta3 = 0.5*2
+a4 = 2*2
 b4 = 6
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
@@ -129,23 +129,25 @@ n.param = n.X + n.theta + n.sigma
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('burninX_1e7')
+load('burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
-init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
+init[(1:n.X)] <- as.numeric(X) + rnorm(n.X) #runif(n.param, 0, 5)
+init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(10, 28, 8 / 3), sigma = diag(3,3)) # random initial values for MCMC
 
 ans = linchpin(1e4, init)
-
-save(ans, file = "l63_linch_burnin_1e7")
+pm = ans[[1]]
+colMeans(pm)
+plot.ts(pm)
+#save(ans, file = "l63_linch_burnin_1e7")
 
 #save(X, file = 'burninX')
-load('l63_linch_burnin')
-params = ans[[1]]
-load('burninX')
-Xe = ans[[2]]
-Xe = matrix(Xe, nrow = 3)
-sum((Xe - as.vector(X))^2)
+#load('l63_linch_burnin')
+#params = ans[[1]]
+#load('burninX')
+#Xe = ans[[2]]
+#Xe = matrix(Xe, nrow = 3)
+#sum((Xe - as.vector(X))^2)
 #pdf("L63_sigma_linchpin_1e4.pdf", height = 6, width = 6)
 #plot(density(params[,1]), ylab = expression(sigma), main = expression(paste('density plot ', sigma)))
 #dev.off()
@@ -166,10 +168,10 @@ sum((Xe - as.vector(X))^2)
 #plot.ts(params, main = 'Time series plots')
 #dev.off()
 
-pdf("L63_butterfly_xz_EM_1e4.pdf", height = 6, width = 6)
-plot(X[1,], X[3,], type = 'l', lwd = 2, xlab = 'X(t)', ylab = 'Z(t)', main = 'Euler-Maruyama')
-dev.off()
+#pdf("L63_butterfly_xz_EM_1e4.pdf", height = 6, width = 6)
+#plot(X[1,], X[3,], type = 'l', lwd = 2, xlab = 'X(t)', ylab = 'Z(t)', main = 'Euler-Maruyama')
+#dev.off()
 
-pdf("L63_butterfly_xz_linchpin_1e4.pdf", height = 6, width = 6)
-plot(Xe[1,], Xe[3,], type = 'l', lwd = 2, xlab = 'X(t)', ylab = 'Z(t)', main = 'Linchpin')
-dev.off()
+#pdf("L63_butterfly_xz_linchpin_1e4.pdf", height = 6, width = 6)
+#plot(Xe[1,], Xe[3,], type = 'l', lwd = 2, xlab = 'X(t)', ylab = 'Z(t)', main = 'Linchpin')
+#dev.off()
