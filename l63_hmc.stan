@@ -52,7 +52,7 @@ functions {
 data {
   int<lower=0> N;
   int<lower=0> K;
-  matrix[3,K+1] y;
+  matrix[3,K] y;
   int seq_t[K];
   matrix[3,3] R;
   vector[3] tau_0;
@@ -66,7 +66,7 @@ data {
   matrix[3,3] inv_lam_0;
   int n_X;
   int n_theta;
-  vector[n_X + n_theta] state;
+  //vector[n_X + n_theta] state;
 }
 
 // The parameters accepted by the model. Our model
@@ -80,7 +80,7 @@ parameters {
 // 'y' to be normally distributed with mean 'mu'
 // and standard deviation 'sigma'.
 model {
-  //target+= X_B_lpdf(state| n_X, n_theta, N, K, y, seq_t, inv_R, inv_lam_0, tau_0, mu, sigma2, del_t, a4, b4);
+    //target+= X_B_lpdf(state| n_X, n_theta, N, K, y, seq_t, inv_R, inv_lam_0, tau_0, mu, sigma2, del_t, a4, b4);
     matrix[3,K] X_t = X_n[1:3, seq_t];
     real p1 = 0;
     vector[3] y_k;
@@ -89,7 +89,7 @@ model {
     vector[3] p3_vec_tmp=rep_vector(0,3);
     real p3 = 0;
     vector[3] p3_vec=rep_vector(0,3);
-    
+
     for(k in 1:K){
       y_k = y[1:3,k];
       X_t_k = X_t[1:3,k];
@@ -98,7 +98,7 @@ model {
     p1 *= -0.5;
     p1 += (-0.5)*(X_n[1:3,1] - tau_0)' * inv_lam_0 * (X_n[1:3,1] - tau_0);
     p2 = (-0.5)*sum((B - mu).*(B - mu)) / sigma2;
-    
+
     for(i in 1:N){
       p3_vec_tmp = (X_n[1:3,i+1] - X_n[1:3,i])/del_t - B * make_tilde(X_n[1:3,i], del_t*(i-1));
       p3_vec += (p3_vec_tmp).*(p3_vec_tmp);
