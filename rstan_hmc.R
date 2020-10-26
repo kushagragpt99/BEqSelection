@@ -133,6 +133,6 @@ initial = list(named_list1, named_list2)
 options(mc.cores = 4)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
-                            inv_lam_0 = inv.lam_o, n_X = n.X, n_theta =n.theta), iter = 2e4, chains = 2, init = initial)
+                            inv_lam_0 = inv.lam_o, n_X = n.X, n_theta =n.theta), iter = 2e3, chains = 2, init = initial)
 
-save(fit, file = "L63_HMC_chain_2")
+save(fit, file = "L63_HMC_chain_2_2e3")

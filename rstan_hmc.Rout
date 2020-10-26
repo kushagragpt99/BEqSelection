@@ -1,7 +1,7 @@
 
-R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
+Platform: x86_64-apple-darwin17.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -24,7 +24,7 @@ Type 'q()' to quit R.
 > library(rstan)
 Loading required package: StanHeaders
 Loading required package: ggplot2
-rstan (Version 2.21.2, GitRev: 2e1f913d3ca3)
+rstan (Version 2.21.1, GitRev: 2e1f913d3ca3)
 For execution on a local, multicore CPU with excess RAM we recommend calling
 options(mc.cores = parallel::detectCores()).
 To avoid recompilation of unchanged Stan programs, we recommend calling
@@ -159,22 +159,76 @@ rstan_options(auto_write = TRUE)
 > options(mc.cores = 4)
 > fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
 +                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
-+                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta =n.theta), iter = 2e4, chains = 2, init = initial)
++                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta =n.theta), iter = 2e3, chains = 2, init = initial)
 
 SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 1).
 
 SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 2).
-Chain 1: 
-Chain 1: Gradient evaluation took 0.03125 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 312.5 seconds.
-Chain 1: Adjust your expectations accordingly!
-Chain 1: 
-Chain 1: 
-Chain 1: Iteration:     1 / 20000 [  0%]  (Warmup)
 Chain 2: 
-Chain 2: Gradient evaluation took 0.015625 seconds
-Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 156.25 seconds.
+Chain 2: Gradient evaluation took 0.006054 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 60.54 seconds.
 Chain 2: Adjust your expectations accordingly!
 Chain 2: 
 Chain 2: 
-Chain 2: Iteration:     1 / 20000 [  0%]  (Warmup)
+Chain 1: 
+Chain 1: Gradient evaluation took 0.005859 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 58.59 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 3492.12 seconds (Warm-up)
+Chain 1:                3914.86 seconds (Sampling)
+Chain 1:                7406.98 seconds (Total)
+Chain 1: 
+Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 3797.58 seconds (Warm-up)
+Chain 2:                3883.64 seconds (Sampling)
+Chain 2:                7681.23 seconds (Total)
+Chain 2: 
+Warning messages:
+1: There were 2000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
+http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+2: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
+http://mc-stan.org/misc/warnings.html#bfmi-low 
+3: Examine the pairs() plot to diagnose sampling problems
+ 
+4: The largest R-hat is 2.25, indicating chains have not mixed.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#r-hat 
+5: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#bulk-ess 
+6: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#tail-ess 
+> 
+> save(fit, file = "L63_HMC_chain_2_2e3")
+> 
+> proc.time()
+     user    system   elapsed 
+15056.282    98.344  7804.814 
