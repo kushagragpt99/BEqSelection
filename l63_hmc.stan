@@ -75,7 +75,9 @@ data {
 parameters {
   //matrix[3, N+1] X_n;
   //matrix[3,12] B;
-  vector[n_X+n_theta] state;
+  //vector[n_X+n_theta] state;
+  vector[n_X] X;
+  vector[n_theta] B_vec;
 }
 
 // The model to be estimated. We model the output
@@ -83,8 +85,10 @@ parameters {
 // and standard deviation 'sigma'.
 model {
     //target+= X_B_lpdf(state| n_X, n_theta, N, K, y, seq_t, inv_R, inv_lam_0, tau_0, mu, sigma2, del_t, a4, b4);
-    matrix[3,N+1] X_n = to_matrix(state[1:n_X], 3, N+1);
-    matrix[3,12] B = to_matrix(state[(n_X + 1):(n_X + n_theta)], 3, 12);
+    //matrix[3,N+1] X_n = to_matrix(state[1:n_X], 3, N+1);
+    //matrix[3,12] B = to_matrix(state[(n_X + 1):(n_X + n_theta)], 3, 12);
+    matrix[3,N+1] X_n = to_matrix(X, 3, N+1);
+    matrix[3,12] B = to_matrix(B_vec, 3, 12);
     matrix[3,K] X_t = X_n[1:3, seq_t];
     real p1 = 0;
     vector[3] y_k;
