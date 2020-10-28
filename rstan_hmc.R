@@ -142,11 +142,11 @@ mu = matrix(rep(0,36), nrow = 3)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = 1e5, chains = 1,
-                            init = initf, control = list(max_treedepth = 3), pars = c("B_vec"))
+                            init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
 
-#p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
+p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
 
-save(fit, file = "L63_HMC_chain_1_mtd3_bp_pv_10")
+save(fit, file = "L63_HMC_chain_1_mtd5_bp_pv_10")
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
