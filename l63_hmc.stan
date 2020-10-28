@@ -57,7 +57,8 @@ data {
   matrix[3,3] R;
   vector[3] tau_0;
   matrix[3,3] lam_0;
-  real mu;
+  // real mu;
+  matrix[3,12] mu;
   real sigma2;
   real del_t;
   real a4;
@@ -72,8 +73,9 @@ data {
 // The parameters accepted by the model. Our model
 // accepts two parameters 'mu' and 'sigma'.
 parameters {
-  matrix[3, N+1] X_n;
-  matrix[3,12] B;
+  //matrix[3, N+1] X_n;
+  //matrix[3,12] B;
+  vector[n_X+n_theta] state;
 }
 
 // The model to be estimated. We model the output
@@ -81,6 +83,8 @@ parameters {
 // and standard deviation 'sigma'.
 model {
     //target+= X_B_lpdf(state| n_X, n_theta, N, K, y, seq_t, inv_R, inv_lam_0, tau_0, mu, sigma2, del_t, a4, b4);
+    matrix[3,N+1] X_n = to_matrix(state[1:n_X], 3, N+1);
+    matrix[3,12] B = to_matrix(state[(n_X + 1):(n_X + n_theta)], 3, 12);
     matrix[3,K] X_t = X_n[1:3, seq_t];
     real p1 = 0;
     vector[3] y_k;

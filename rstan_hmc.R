@@ -105,8 +105,9 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 1
+sigma2 = 1e1
 mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
+mu = matrix(mu_truth, nrow = 3)
 n.X = 3 * (N + 1)
 n.theta = 36
 n.sigma = 3
@@ -126,13 +127,26 @@ named_list1 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
 load("l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
 #ans = linchpin(1e4, init)
-
+mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
 model = stan_model('l63_hmc.stan')
 named_list2 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3))
-initial = list(named_list1, named_list2)
-options(mc.cores = 4)
+#initial = list(named_list1, named_list2)
+initial = list(named_list2)
+options(mc.cores = 2)
+
+initf <- function() {
+    print('you shall not pass***************************************8')
+    return(list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)))
+}
+mu = matrix(rep(0,36), nrow = 3)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
-                            inv_lam_0 = inv.lam_o, n_X = n.X, n_theta =n.theta), iter = 2e4, chains = 2, init = initial)
+                            inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = 1e5, chains = 1,
+                            init = initf, control = list(max_treedepth = 3))
 
-save(fit, file = "L63_HMC_chain_2")
+p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
+p2 = p1[, 1, (n.X + 1):(n.param - 3)]
+
+save(fit, file = "L63_HMC_chain_1_mtd3_bp_pv_10")
+
+## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
