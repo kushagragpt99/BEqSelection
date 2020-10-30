@@ -3,6 +3,15 @@ library(mvtnorm)
 library(mcmc)
 library(invgamma)
 library(mcmcse)
+library(expm)
+library(pracma)
+
+adjust_matrix <- function(mat, N, epsilon = sqrt(log(N) / dim(mat)[2]), b = 9 / 10) {
+    mat.adj <- mat
+    adj <- epsilon * N ^ (-b)
+    mat.adj = mat + diag(mat*epsilon)
+    return(mat.adj)
+}
 
 make_tilde <- function(X, t) {
     X_vec = c(1, X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
@@ -155,19 +164,19 @@ n.X = 3 * (N + 1)
 n.theta = 36
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
-scale_iter = 1e4
-n = 1e5
+scale_iter = 1e3
+n = 1e3
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('burninX')
+load('../burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
 non_zero = c(4, 5, 7, 8, 12, 24, 29)
-load("l63_linch_reg_bsv_0001_T_20_pv_10_init")
+load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
 
 scale = rep(0.0005, n.X + n.theta)
@@ -183,13 +192,20 @@ scale[n.X + c(7)] = 0.08
 # scale[n.X+4] = 0.5
 scale[n.X + 12] = 0.005
 
-
+h = 0.05
 scale_MC = metrop(ludfun, init, scale_iter, scale = scale)
-print("scale matrix created")
+print("scale MC sampled")
 cov_mat = cov(scale_MC$batch) # mcse.multi(scale_MC$batch, method = "bartlett")$cov
+
+if (min(eigen(cov_mat, only.values = TRUE)$values) < 0) {
+    print("adjusting cov matrix")
+    cov_mat = adjust_matrix(cov_mat, n)
+}
+
+scale_tuned = h * sqrtm(cov_mat)$B
 print("covariance matrix created")
 #scaled_samples = metrop(ludfun, init, n, scale = cov_mat)
-ans = linchpin(n, init, scale)
+ans = linchpin(n, init, scale_tuned)
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter, 
                  " \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
                  20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)))
