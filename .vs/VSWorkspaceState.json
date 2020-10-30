@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\lorenz63",
+    "\\lorenz63\\stan"
   ],
-  "SelectedNode": "\\lorenz_63.R",
+  "SelectedNode": "\\lorenz63\\stan\\rstan_hmc.R",
   "PreviewInSolutionExplorer": false
 }
