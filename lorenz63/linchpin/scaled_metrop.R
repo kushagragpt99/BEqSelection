@@ -186,7 +186,7 @@ scale[n.X + 12] = 0.005
 
 scale_MC = metrop(ludfun, init, scale_iter, scale = scale)
 print("scale matrix created")
-cov_mat = mcse.multi(scale_MC$batch, method = "bartlett")$cov
+cov_mat = cov(scale_MC$batch) # mcse.multi(scale_MC$batch, method = "bartlett")$cov
 print("covariance matrix created")
 #scaled_samples = metrop(ludfun, init, n, scale = cov_mat)
 ans = linchpin(n, init, scale)
