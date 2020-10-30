@@ -72,18 +72,18 @@ ludfun <- function(state) {
 linchpin <- function(n, init, scale) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.0005, n.X + n.theta)
-    scale[(n.X + 1):(n.X + n.theta)] = 0.001
-    scale[n.X + non_zero] = 0.01
-    #scale[(n.X + 1):(n.X + 3) ] = 0.001
-    scale[n.X + c(24, 29)] = 0.008
-    #scale[n.X + c(3,6,14,17,22,23)] = 0.003
-    scale[n.X + 8] = 0.01
-    scale[n.X + c(4, 5, 7)] = 0.08 # 0.05
-    scale[n.X + c(7)] = 0.08
-    #scale[n.X+c(3)] = 0.0008
-    # scale[n.X+4] = 0.5
-    scale[n.X + 12] = 0.005
+    #scale = rep(0.0005, n.X + n.theta)
+    #scale[(n.X + 1):(n.X + n.theta)] = 0.001
+    #scale[n.X + non_zero] = 0.01
+    ##scale[(n.X + 1):(n.X + 3) ] = 0.001
+    #scale[n.X + c(24, 29)] = 0.008
+    ##scale[n.X + c(3,6,14,17,22,23)] = 0.003
+    #scale[n.X + 8] = 0.01
+    #scale[n.X + c(4, 5, 7)] = 0.08 # 0.05
+    #scale[n.X + c(7)] = 0.08
+    ##scale[n.X+c(3)] = 0.0008
+    ## scale[n.X+4] = 0.5
+    #scale[n.X + 12] = 0.005
     accept.prob = 0
     #chain = metrop(ludfun, init, n, scale = scale)
     #print(chain$accept)
@@ -188,13 +188,13 @@ scale_MC = metrop(ludfun, init, scale_iter, scale = scale)
 print("scale matrix created")
 cov_mat = mcse.multi(scale_MC$batch, method = "bartlett")$cov
 print("covariance matrix created")
-scaled_samples = metrop(ludfun, init, n, scale = cov_mat)
-
+#scaled_samples = metrop(ludfun, init, n, scale = cov_mat)
+ans = linchpin(n, init, scale)
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter, 
                  " \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
                  20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)))
 
-to_save = list(scaled_samples, chain_info)
+to_save = list(ans, chain_info)
 save(to_save, file = "scaled_metrop")
 #chain_info = paste(c("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter,
                  #" \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
