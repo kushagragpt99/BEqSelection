@@ -17,8 +17,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-[Previously saved workspace restored]
-
 > set.seed(1)
 > library(mvtnorm)
 > library(mcmc)
@@ -167,30 +165,39 @@ rstan_options(auto_write = TRUE)
 > 
 > initf <- function() {
 +     print('you shall not pass***************************************8')
-+     return(list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)))
++     return(list(X = X, B_vec = init[(n.X + 1):(n.X + n.theta)] ))
 + }
 > 
 > chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-+                  "max tree depth is ", 8, " \n starting from ..._init ", "\n priors centered at ", 0, 
++                  "max tree depth is ", 7, " \n starting from ..._init ", "\n priors centered at ", 0, 
 +                  " variance ", sigma2, " time period ",20))
 >                 
 > print(chain_info)
 [1] "no of samples from MC is  50000  "                    
-[2] " using warmup  20000 max tree depth is  8  "          
+[2] " using warmup  20000 max tree depth is  7  "          
 [3] " starting from ..._init  "                            
 [4] " priors centered at  0  variance  10  time period  20"
 > fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
 +                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
 +                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-+                             chains = 1, init = initf, control = list(max_treedepth = 8), pars = c("B_vec"))
++                             chains = 1, init = initf, control = list(max_treedepth = 7), pars = c("B_vec"))
 [1] "you shall not pass***************************************8"
 
 SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 1).
-Chain 1: 
-Chain 1: Gradient evaluation took 0 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
-Chain 1: Adjust your expectations accordingly!
-Chain 1: 
-Chain 1: 
-Chain 1: Iteration:     1 / 50000 [  0%]  (Warmup)
-Killed
+Chain 1: Unrecoverable error evaluating the log probability at the initial value.
+Chain 1: mismatch in number dimensions declared and found in context; processing stage=parameter initialization; variable name=X; dims declared=(6003); dims found=(3,2001)
+[1] "Error in sampler$call_sampler(args_list[[i]]) : "                                                                                                                    
+[2] "  mismatch in number dimensions declared and found in context; processing stage=parameter initialization; variable name=X; dims declared=(6003); dims found=(3,2001)"
+error occurred during calling the sampler; sampling not done
+> 
+> p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
+Stan model 'l63_hmc' does not contain samples.
+> #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
+> to_save = list(fit, chain_info)
+> save(to_save, file = "hmc_td_8")
+> 
+> ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
+> 
+> proc.time()
+   user  system elapsed 
+ 40.390   6.311  48.133 

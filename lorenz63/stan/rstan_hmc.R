@@ -139,7 +139,7 @@ options(mc.cores = 2)
 
 initf <- function() {
     print('you shall not pass***************************************8')
-    return(list(X = X, B_vec = init[(n.X + 1):(n.X + n.theta)] ))
+    return(list(X = as.numeric(X), B_vec = init[(n.X + 1):(n.X + n.theta)] ))
 }
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
@@ -155,6 +155,6 @@ fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = t
 p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
 to_save = list(fit, chain_info)
-save(to_save, file = "hmc_td_8")
+#save(to_save, file = "hmc_td_8")
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
