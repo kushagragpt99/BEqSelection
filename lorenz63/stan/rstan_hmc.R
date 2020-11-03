@@ -6,13 +6,13 @@ library(rstan)
 #setwd("~/Python_Scripts/Bayesian_inference_computer_models")
 
 make_tilde <- function(X,t) {
-  X_vec = c(1, X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
+  X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
   return(X_vec)
 }
 # drifet function for Lorenz-63
 drift_fun <- function(X, t, B) {
   #print(make_tilde(X,t))
-  tildeX = matrix(make_tilde(X, t), nrow = 12, ncol = 1)
+  tildeX = matrix(make_tilde(X, t), nrow = 11, ncol = 1)
   B_mat = matrix(B, nrow = 3)
   #print(B)
   #print(dim(tildeX))
@@ -106,16 +106,16 @@ R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
 sigma2 = 1e1
-mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
+mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 #mu = matrix(mu_truth, nrow = 3)
-mu = matrix(rep(0, 36), nrow = 3)
+mu = matrix(rep(0, 33), nrow = 3)
 n.X = 3 * (N + 1)
-n.theta = 36
+n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 seq_t = seq(2, N + 1, N / K)
-n = 5e4
-burn_in_n = 2e4
+n = 1e4
+burn_in_n = 5e3
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -128,7 +128,7 @@ init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,mu_truth,sigma=diag(1/50,n.theta))
 non_zero = c(4,5,7,8,12,24,29)
 named_list1 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3))
 load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
-init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
+init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,-c(1,2,3)], -3)
 #ans = linchpin(1e4, init)
 mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
 model = stan_model('l63_hmc.stan')
@@ -143,18 +143,19 @@ initf <- function() {
 }
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-                 "max tree depth is ", 7, " \n starting from ..._init ", "\n priors centered at ", 0, 
-                 " variance ", sigma2, " time period ",20))
+                 "max tree depth is ", 4, " \n starting from ..._init ", "\n priors centered at ", 0, 
+                 " variance ", sigma2, " time period ",20, "\n no intercept model"))
                 
 print(chain_info)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-                            chains = 1, init = initf, control = list(max_treedepth = 7), pars = c("B_vec"))
+                            chains = 1, init = initf, control = list(max_treedepth = 4), pars = c("B_vec"))
 
 p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
 to_save = list(fit, chain_info)
-#save(to_save, file = "hmc_td_8")
+save(to_save, file = "hmc_td_4_noInt")
+
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
