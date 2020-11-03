@@ -1,7 +1,7 @@
 
-R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin17.0 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -26,7 +26,7 @@ Type 'q()' to quit R.
 > library(rstan)
 Loading required package: StanHeaders
 Loading required package: ggplot2
-rstan (Version 2.21.1, GitRev: 2e1f913d3ca3)
+rstan (Version 2.21.2, GitRev: 2e1f913d3ca3)
 For execution on a local, multicore CPU with excess RAM we recommend calling
 options(mc.cores = parallel::detectCores()).
 To avoid recompilation of unchanged Stan programs, we recommend calling
@@ -135,16 +135,19 @@ rstan_options(auto_write = TRUE)
 > mu = 0
 > sigma2 = 1e1
 > mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
-> mu = matrix(mu_truth, nrow = 3)
+> #mu = matrix(mu_truth, nrow = 3)
+> mu = matrix(rep(0, 36), nrow = 3)
 > n.X = 3 * (N + 1)
 > n.theta = 36
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
 > seq_t = seq(2, N + 1, N / K)
+> n = 5e4
+> burn_in_n = 2e4
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
-> load('burninX')
+> load('../burninX')
 > Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 > init = numeric(n.X + n.theta)
 > init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
@@ -152,7 +155,7 @@ rstan_options(auto_write = TRUE)
 > init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,mu_truth,sigma=diag(1/50,n.theta))
 > non_zero = c(4,5,7,8,12,24,29)
 > named_list1 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3))
-> load("l63_linch_reg_bsv_0001_T_20_pv_10_init")
+> load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 > init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
 > #ans = linchpin(1e4, init)
 > mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
@@ -166,61 +169,28 @@ rstan_options(auto_write = TRUE)
 +     print('you shall not pass***************************************8')
 +     return(list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)))
 + }
-> mu = matrix(rep(0,36), nrow = 3)
+> 
+> chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
++                  "max tree depth is ", 8, " \n starting from ..._init ", "\n priors centered at ", 0, 
++                  " variance ", sigma2, " time period ",20))
+>                 
+> print(chain_info)
+[1] "no of samples from MC is  50000  "                    
+[2] " using warmup  20000 max tree depth is  8  "          
+[3] " starting from ..._init  "                            
+[4] " priors centered at  0  variance  10  time period  20"
 > fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
 +                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
-+                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = 1e5, chains = 1,
-+                             init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
++                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
++                             chains = 1, init = initf, control = list(max_treedepth = 8), pars = c("B_vec"))
 [1] "you shall not pass***************************************8"
 
 SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.004728 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 47.28 seconds.
+Chain 1: Gradient evaluation took 0 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
-Chain 1: Iteration:     1 / 100000 [  0%]  (Warmup)
-Chain 1: Iteration: 10000 / 100000 [ 10%]  (Warmup)
-Chain 1: Iteration: 20000 / 100000 [ 20%]  (Warmup)
-Chain 1: Iteration: 30000 / 100000 [ 30%]  (Warmup)
-Chain 1: Iteration: 40000 / 100000 [ 40%]  (Warmup)
-Chain 1: Iteration: 50000 / 100000 [ 50%]  (Warmup)
-Chain 1: Iteration: 50001 / 100000 [ 50%]  (Sampling)
-Chain 1: Iteration: 60000 / 100000 [ 60%]  (Sampling)
-Chain 1: Iteration: 70000 / 100000 [ 70%]  (Sampling)
-Chain 1: Iteration: 80000 / 100000 [ 80%]  (Sampling)
-Chain 1: Iteration: 90000 / 100000 [ 90%]  (Sampling)
-Chain 1: Iteration: 100000 / 100000 [100%]  (Sampling)
-Chain 1: 
-Chain 1:  Elapsed Time: 5706.74 seconds (Warm-up)
-Chain 1:                5820.74 seconds (Sampling)
-Chain 1:                11527.5 seconds (Total)
-Chain 1: 
-Warning messages:
-1: There were 50000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 5. See
-http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-2: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
-http://mc-stan.org/misc/warnings.html#bfmi-low 
-3: Examine the pairs() plot to diagnose sampling problems
- 
-4: The largest R-hat is 1.26, indicating chains have not mixed.
-Running the chains for more iterations may help. See
-http://mc-stan.org/misc/warnings.html#r-hat 
-5: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-Running the chains for more iterations may help. See
-http://mc-stan.org/misc/warnings.html#bulk-ess 
-6: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
-Running the chains for more iterations may help. See
-http://mc-stan.org/misc/warnings.html#tail-ess 
-> 
-> #p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
-> #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
-> 
-> save(fit, file = "L63_HMC_chain_1_mtd3_bp_pv_10")
-> 
-> ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
-> 
-> proc.time()
-     user    system   elapsed 
-11458.099    76.237 11674.975 
+Chain 1: Iteration:     1 / 50000 [  0%]  (Warmup)
+Killed

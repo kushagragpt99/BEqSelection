@@ -107,16 +107,19 @@ inv_R = solve(R)
 mu = 0
 sigma2 = 1e1
 mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
-mu = matrix(mu_truth, nrow = 3)
+#mu = matrix(mu_truth, nrow = 3)
+mu = matrix(rep(0, 36), nrow = 3)
 n.X = 3 * (N + 1)
 n.theta = 36
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 seq_t = seq(2, N + 1, N / K)
+n = 5e4
+burn_in_n = 2e4
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('burninX')
+load('../burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
@@ -124,7 +127,7 @@ init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,mu_truth,sigma=diag(1/50,n.theta))
 non_zero = c(4,5,7,8,12,24,29)
 named_list1 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3))
-load("l63_linch_reg_bsv_0001_T_20_pv_10_init")
+load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
 #ans = linchpin(1e4, init)
 mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
@@ -138,15 +141,20 @@ initf <- function() {
     print('you shall not pass***************************************8')
     return(list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)))
 }
-mu = matrix(rep(0,36), nrow = 3)
+
+chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
+                 "max tree depth is ", 8, " \n starting from ..._init ", "\n priors centered at ", 0, 
+                 " variance ", sigma2, " time period ",20))
+                
+print(chain_info)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
-                            inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = 1e5, chains = 1,
-                            init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
+                            inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
+                            chains = 1, init = initf, control = list(max_treedepth = 8), pars = c("B_vec"))
 
 p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
-
-save(fit, file = "L63_HMC_chain_1_mtd5_bp_pv_10")
+to_save = list(fit, chain_info)
+save(to_save, file = "hmc_td_8")
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds

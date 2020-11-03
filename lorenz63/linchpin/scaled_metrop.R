@@ -97,7 +97,11 @@ linchpin <- function(n, init, scale) {
     #chain = metrop(ludfun, init, n, scale = scale)
     #print(chain$accept)
     for (i in 1:n) {
-        if (i %% 1e3 == 0) print(c(i, accept.prob / i))
+        if (i %% 5e3 == 0) {
+            print(c(i, accept.prob / i))
+            to_save = list(n, chain_info, param_mat)
+            save(to_save, file = "scaled_metrop_checkpoint")
+        }
         chain = metrop(ludfun, init, 1, scale = scale)
         state = chain$batch
         accept.prob = accept.prob + chain$accept
@@ -164,8 +168,8 @@ n.X = 3 * (N + 1)
 n.theta = 36
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
-scale_iter = 1e3
-n = 1e3
+scale_iter = 1e4
+n = 5e4
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -192,23 +196,28 @@ scale[n.X + c(7)] = 0.08
 # scale[n.X+4] = 0.5
 scale[n.X + 12] = 0.005
 
-h = 0.05
-scale_MC = metrop(ludfun, init, scale_iter, scale = scale)
-print("scale MC sampled")
-cov_mat = cov(scale_MC$batch) # mcse.multi(scale_MC$batch, method = "bartlett")$cov
+h = 0.1
+#scale_MC = metrop(ludfun, init, scale_iter, scale = scale)
+#print("scale MC sampled")
+#cov_mat = cov(scale_MC$batch) # mcse.multi(scale_MC$batch, method = "bartlett")$cov
+#cov_mat = adjust_matrix(cov_mat, n)
+#eig = eigen(cov_mat)
+#sqrt_cov_mat = eig$vectors %*% diag(sqrt(eig$values)) %*% t(eig$vectors)
+##if (min(eigen(cov_mat, only.values = TRUE)$values) < 0) {
+    ##print("adjusting cov matrix")
+    
+##}
 
-if (min(eigen(cov_mat, only.values = TRUE)$values) < 0) {
-    print("adjusting cov matrix")
-    cov_mat = adjust_matrix(cov_mat, n)
-}
-
-scale_tuned = h * sqrtm(cov_mat)$B
+#scale_tuned = h * sqrt_cov_mat
+#save(scale_tuned, file = "scaled_tune")
+load('scaled_tune')
+scale_tuned_mod = Mod(scale_tuned)
 print("covariance matrix created")
 #scaled_samples = metrop(ludfun, init, n, scale = cov_mat)
-ans = linchpin(n, init, scale_tuned)
-chain_info = capture.output(cat("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter, 
-                 " \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
+chain_info = capture.output(cat("no of samples from MC is ", n, " \n using Mod of scaled cov matrix from MC of length ", scale_iter,
+                 "tuning in scale is ", h, " \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
                  20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)))
+ans = linchpin(n, init, scale_tuned_mod)
 
 to_save = list(ans, chain_info)
 save(to_save, file = "scaled_metrop")
