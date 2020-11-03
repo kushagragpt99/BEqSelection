@@ -13,7 +13,7 @@
 functions {
   
   vector make_tilde(vector X, real t){
-    vector[12] X_vec = [1, X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2]';
+    vector[11] X_vec = [X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2]';
     return(X_vec);
   } 
   
@@ -58,7 +58,7 @@ data {
   vector[3] tau_0;
   matrix[3,3] lam_0;
   // real mu;
-  matrix[3,12] mu;
+  matrix[3,11] mu;
   real sigma2;
   real del_t;
   real a4;
@@ -74,7 +74,7 @@ data {
 // accepts two parameters 'mu' and 'sigma'.
 parameters {
   //matrix[3, N+1] X_n;
-  //matrix[3,12] B;
+  //matrix[3,11] B;
   //vector[n_X+n_theta] state;
   vector[n_X] X;
   vector[n_theta] B_vec;
@@ -86,9 +86,9 @@ parameters {
 model {
     //target+= X_B_lpdf(state| n_X, n_theta, N, K, y, seq_t, inv_R, inv_lam_0, tau_0, mu, sigma2, del_t, a4, b4);
     //matrix[3,N+1] X_n = to_matrix(state[1:n_X], 3, N+1);
-    //matrix[3,12] B = to_matrix(state[(n_X + 1):(n_X + n_theta)], 3, 12);
+    //matrix[3,11] B = to_matrix(state[(n_X + 1):(n_X + n_theta)], 3, 11);
     matrix[3,N+1] X_n = to_matrix(X, 3, N+1);
-    matrix[3,12] B = to_matrix(B_vec, 3, 12);
+    matrix[3,11] B = to_matrix(B_vec, 3, 11);
     matrix[3,K] X_t = X_n[1:3, seq_t];
     real p1 = 0;
     vector[3] y_k;
