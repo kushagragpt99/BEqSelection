@@ -40,6 +40,7 @@ data {
   matrix[3,3] inv_lam_0;
   int n_X;
   int n_theta;
+  int n_sigma
   int n_param;
   //vector[n_X + n_theta] state;
 }
@@ -50,8 +51,9 @@ parameters {
   //matrix[3, N+1] X_n;
   //matrix[3,12] B;
   //vector[n_X+n_theta] state;
-  vector[n_X] X;
-  vector[n_theta] B_vec;
+  vector[n_X] X_n;
+  vector[n_theta] theta;
+  vector[n_sigma] Sigma;
 }
 
 // The model to be estimated. We model the output
@@ -63,11 +65,11 @@ model {
     //matrix[3,12] B = to_matrix(state[(n_X + 1):(n_X + n_theta)], 3, 12);
 
     matrix[3,N+1] X_n = to_matrix(X, 3, N+1);
-    vector[3] theta = state[(n_X + 1):(n.X + n_theta)];
-    matrix[3,3] Sigma = diag_matrix(state[(n_X + n_theta + 1):n_param]);
+    //vector[3] theta = state[(n_X + 1):(n.X + n_theta)];
+    //matrix[3,3] Sigma = diag_matrix(state[(n_X + n_theta + 1):n_param]);
 
     matrix[3,K] X_t = X_n[1:3, seq_t];
-     real p1 = 0;
+    real p1 = 0;
     vector[3] y_k;
     vector[3] X_t_k;
     real p2 = 0;

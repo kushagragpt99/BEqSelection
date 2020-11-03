@@ -139,18 +139,18 @@ options(mc.cores = 2)
 
 initf <- function() {
     print('you shall not pass***************************************8')
-    return(list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)))
+    return(list(X = X, B_vec = init[(n.X + 1):(n.X + n.theta)] ))
 }
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-                 "max tree depth is ", 8, " \n starting from ..._init ", "\n priors centered at ", 0, 
+                 "max tree depth is ", 7, " \n starting from ..._init ", "\n priors centered at ", 0, 
                  " variance ", sigma2, " time period ",20))
                 
 print(chain_info)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-                            chains = 1, init = initf, control = list(max_treedepth = 8), pars = c("B_vec"))
+                            chains = 1, init = initf, control = list(max_treedepth = 7), pars = c("B_vec"))
 
 p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
