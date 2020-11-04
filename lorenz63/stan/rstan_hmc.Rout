@@ -140,8 +140,8 @@ rstan_options(auto_write = TRUE)
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
 > seq_t = seq(2, N + 1, N / K)
-> n = 1e5
-> burn_in_n = 1e4
+> n = 5e3
+> burn_in_n = 1e3
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
@@ -173,58 +173,60 @@ rstan_options(auto_write = TRUE)
 +                  " variance ", sigma2, " time period ",20, "\n no intercept model"))
 >                 
 > print(chain_info)
-[1] "no of samples from MC is  1e+05  "                     
-[2] " using warmup  10000 max tree depth is  7  "           
+[1] "no of samples from MC is  5000  "                      
+[2] " using warmup  1000 max tree depth is  7  "            
 [3] " starting from ..._init  "                             
 [4] " priors centered at  0  variance  10  time period  20 "
 [5] " no intercept model"                                   
 > fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
 +                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
 +                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-+                             chains = 1, init = initf, control = list(max_treedepth = 7), pars = c("B_vec"))
++                             chains = 1, algorithm = "HMC", init = initf, control = list(stepsize = .017, int_time = 1), pars = c("B_vec"))
 [1] "you shall not pass***************************************8"
 
 SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.005146 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 51.46 seconds.
+Chain 1: Gradient evaluation took 0.004885 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 48.85 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
-Chain 1: Iteration:     1 / 100000 [  0%]  (Warmup)
-Chain 1: Iteration: 10000 / 100000 [ 10%]  (Warmup)
-Chain 1: Iteration: 10001 / 100000 [ 10%]  (Sampling)
-Chain 1: Iteration: 20000 / 100000 [ 20%]  (Sampling)
-Chain 1: Iteration: 30000 / 100000 [ 30%]  (Sampling)
-Chain 1: Iteration: 40000 / 100000 [ 40%]  (Sampling)
-Chain 1: Iteration: 50000 / 100000 [ 50%]  (Sampling)
-Chain 1: Iteration: 60000 / 100000 [ 60%]  (Sampling)
-Chain 1: Iteration: 70000 / 100000 [ 70%]  (Sampling)
-Chain 1: Iteration: 80000 / 100000 [ 80%]  (Sampling)
-Chain 1: Iteration: 90000 / 100000 [ 90%]  (Sampling)
-Chain 1: Iteration: 100000 / 100000 [100%]  (Sampling)
+Chain 1: Iteration:    1 / 5000 [  0%]  (Warmup)
+Chain 1: Iteration:  500 / 5000 [ 10%]  (Warmup)
+Chain 1: Iteration: 1000 / 5000 [ 20%]  (Warmup)
+Chain 1: Iteration: 1001 / 5000 [ 20%]  (Sampling)
+Chain 1: Iteration: 1500 / 5000 [ 30%]  (Sampling)
+Chain 1: Iteration: 2000 / 5000 [ 40%]  (Sampling)
+Chain 1: Iteration: 2500 / 5000 [ 50%]  (Sampling)
+Chain 1: Iteration: 3000 / 5000 [ 60%]  (Sampling)
+Chain 1: Iteration: 3500 / 5000 [ 70%]  (Sampling)
+Chain 1: Iteration: 4000 / 5000 [ 80%]  (Sampling)
+Chain 1: Iteration: 4500 / 5000 [ 90%]  (Sampling)
+Chain 1: Iteration: 5000 / 5000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 4112.41 seconds (Warm-up)
-Chain 1:                35555.1 seconds (Sampling)
-Chain 1:                39667.5 seconds (Total)
+Chain 1:  Elapsed Time: 786.9 seconds (Warm-up)
+Chain 1:                2668.38 seconds (Sampling)
+Chain 1:                3455.28 seconds (Total)
 Chain 1: 
 Warning messages:
-1: There were 755 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
-2: There were 89245 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 7. See
-http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-3: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+1: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
 http://mc-stan.org/misc/warnings.html#bfmi-low 
-4: Examine the pairs() plot to diagnose sampling problems
+2: Examine the pairs() plot to diagnose sampling problems
  
+3: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#bulk-ess 
+4: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#tail-ess 
 > 
 > p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 > #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
 > to_save = list(fit, chain_info)
-> save(to_save, file = "hmc_td_7_noInt")
+> save(to_save, file = "hmc_td_HMC_noInt")
 > 
 > ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
 > 
 > proc.time()
-     user    system   elapsed 
-39673.402    23.443 39814.446 
+    user   system  elapsed 
+3472.174    7.964 3495.875 
