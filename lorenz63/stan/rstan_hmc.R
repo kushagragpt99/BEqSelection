@@ -114,8 +114,8 @@ n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 seq_t = seq(2, N + 1, N / K)
-n = 1e4
-burn_in_n = 5e3
+n = 1e5
+burn_in_n = 1e4
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -143,18 +143,18 @@ initf <- function() {
 }
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-                 "max tree depth is ", 4, " \n starting from ..._init ", "\n priors centered at ", 0, 
+                 "max tree depth is ", 7, " \n starting from ..._init ", "\n priors centered at ", 0, 
                  " variance ", sigma2, " time period ",20, "\n no intercept model"))
                 
 print(chain_info)
 fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-                            chains = 1, init = initf, control = list(max_treedepth = 4), pars = c("B_vec"))
+                            chains = 1, init = initf, control = list(max_treedepth = 7), pars = c("B_vec"))
 
 p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
 to_save = list(fit, chain_info)
-save(to_save, file = "hmc_td_4_noInt")
+save(to_save, file = "hmc_td_7_noInt")
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
