@@ -140,8 +140,13 @@ rstan_options(auto_write = TRUE)
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
 > seq_t = seq(2, N + 1, N / K)
+<<<<<<< HEAD
 > n = 1e4
 > burn_in_n = 2e3
+=======
+> n = 5e3
+> burn_in_n = 1e3
+>>>>>>> a24fcfe73dfc831f384f70b0ff2e4e2b8cd87a63
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
@@ -170,6 +175,7 @@ rstan_options(auto_write = TRUE)
 + }
 > 
 > chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
+<<<<<<< HEAD
 +                  "max tree depth is ", 5, " \n starting from ..._init ", "\n priors centered at truth truth ", 
 +                  " variance ", sigma2, " lam_0 is ", lam_o[1,1], " time period ",20, " Nobs ", Nobs, "\n no intercept model"))
 >                 
@@ -183,10 +189,26 @@ rstan_options(auto_write = TRUE)
 +                             mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
 +                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
 +                             chains = 1, init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
+=======
++                  "max tree depth is ", 7, " \n starting from ..._init ", "\n priors centered at ", 0, 
++                  " variance ", sigma2, " time period ",20, "\n no intercept model"))
+>                 
+> print(chain_info)
+[1] "no of samples from MC is  5000  "                      
+[2] " using warmup  1000 max tree depth is  7  "            
+[3] " starting from ..._init  "                             
+[4] " priors centered at  0  variance  10  time period  20 "
+[5] " no intercept model"                                   
+> fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
++                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
++                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
++                             chains = 1, algorithm = "HMC", init = initf, control = list(stepsize = .017, int_time = 1), pars = c("B_vec"))
+>>>>>>> a24fcfe73dfc831f384f70b0ff2e4e2b8cd87a63
 [1] "you shall not pass***************************************8"
 
 SAMPLING FOR MODEL 'attempt2' NOW (CHAIN 1).
 Chain 1: 
+<<<<<<< HEAD
 Chain 1: Gradient evaluation took 0 seconds
 Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
 Chain 1: Adjust your expectations accordingly!
@@ -213,16 +235,46 @@ Warning messages:
 1: There were 8000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 5. See
 http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 2: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+=======
+Chain 1: Gradient evaluation took 0.004885 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 48.85 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 1: Iteration:    1 / 5000 [  0%]  (Warmup)
+Chain 1: Iteration:  500 / 5000 [ 10%]  (Warmup)
+Chain 1: Iteration: 1000 / 5000 [ 20%]  (Warmup)
+Chain 1: Iteration: 1001 / 5000 [ 20%]  (Sampling)
+Chain 1: Iteration: 1500 / 5000 [ 30%]  (Sampling)
+Chain 1: Iteration: 2000 / 5000 [ 40%]  (Sampling)
+Chain 1: Iteration: 2500 / 5000 [ 50%]  (Sampling)
+Chain 1: Iteration: 3000 / 5000 [ 60%]  (Sampling)
+Chain 1: Iteration: 3500 / 5000 [ 70%]  (Sampling)
+Chain 1: Iteration: 4000 / 5000 [ 80%]  (Sampling)
+Chain 1: Iteration: 4500 / 5000 [ 90%]  (Sampling)
+Chain 1: Iteration: 5000 / 5000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 786.9 seconds (Warm-up)
+Chain 1:                2668.38 seconds (Sampling)
+Chain 1:                3455.28 seconds (Total)
+Chain 1: 
+Warning messages:
+1: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+>>>>>>> a24fcfe73dfc831f384f70b0ff2e4e2b8cd87a63
 http://mc-stan.org/misc/warnings.html#bfmi-low 
-3: Examine the pairs() plot to diagnose sampling problems
+2: Examine the pairs() plot to diagnose sampling problems
  
+<<<<<<< HEAD
 4: The largest R-hat is 1.32, indicating chains have not mixed.
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#r-hat 
 5: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+=======
+3: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+>>>>>>> a24fcfe73dfc831f384f70b0ff2e4e2b8cd87a63
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#bulk-ess 
-6: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+4: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#tail-ess 
 > 
@@ -234,6 +286,7 @@ http://mc-stan.org/misc/warnings.html#tail-ess
 > 
 > 
 > #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
+<<<<<<< HEAD
 > to_save = list(fit2, chain_info)
 > save(to_save, file = "hmc_td_5_noInt_nuts_nobs50_lam0_1_sigma_1_mutruth")
 > p23 = extract(fit2, inc_warmup = FALSE, permuted = FALSE)
@@ -246,6 +299,10 @@ http://mc-stan.org/misc/warnings.html#tail-ess
 [1,] -0.047402292  0.007816881  0.0009565362 -0.0166165  0.002654110
 [2,] -0.005653813 -0.020507733 -0.9951304594  0.1841256 -0.016072690
 [3,]  0.639179920  0.017267582  0.0014477734 -0.3061989  0.004087992
+=======
+> to_save = list(fit, chain_info)
+> save(to_save, file = "hmc_td_HMC_noInt")
+>>>>>>> a24fcfe73dfc831f384f70b0ff2e4e2b8cd87a63
 > 
 > ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
 > #pdf("L63_TS_linchpin_hmc_1e5_35_lam0_10.pdf", height = 6, width = 6)
@@ -254,4 +311,8 @@ http://mc-stan.org/misc/warnings.html#tail-ess
 > 
 > proc.time()
     user   system  elapsed 
+<<<<<<< HEAD
 1585.234    7.858 1617.092 
+=======
+3472.174    7.964 3495.875 
+>>>>>>> a24fcfe73dfc831f384f70b0ff2e4e2b8cd87a63

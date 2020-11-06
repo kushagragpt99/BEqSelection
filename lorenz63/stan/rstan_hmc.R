@@ -146,6 +146,7 @@ initf <- function() {
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
                  "max tree depth is ", 5, " \n starting from ..._init ", "\n priors centered at truth truth ", 
                  " variance ", sigma2, " lam_0 is ", lam_o[1,1], " time period ",20, " Nobs ", Nobs, "\n no intercept model"))
+
                 
 print(chain_info)
 fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[,1], 
@@ -161,10 +162,12 @@ fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[,
 
 
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
+
 to_save = list(fit2, chain_info)
 save(to_save, file = "hmc_td_5_noInt_nuts_nobs50_lam0_1_sigma_1_mutruth")
 p23 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
 matrix(colMeans(p23[, 1, 1:33]), nrow = 3)
+
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
 #pdf("L63_TS_linchpin_hmc_1e5_35_lam0_10.pdf", height = 6, width = 6)
