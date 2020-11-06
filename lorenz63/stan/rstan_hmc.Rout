@@ -1,7 +1,7 @@
 
-R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin17.0 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -24,7 +24,7 @@ Type 'q()' to quit R.
 > library(rstan)
 Loading required package: StanHeaders
 Loading required package: ggplot2
-rstan (Version 2.21.1, GitRev: 2e1f913d3ca3)
+rstan (Version 2.21.2, GitRev: 2e1f913d3ca3)
 For execution on a local, multicore CPU with excess RAM we recommend calling
 options(mc.cores = parallel::detectCores()).
 To avoid recompilation of unchanged Stan programs, we recommend calling
@@ -111,10 +111,10 @@ rstan_options(auto_write = TRUE)
 > # hyper-parameters
 > to = 0 # initial time
 > tf = 20 # final time
-> Nobs = 10 # no of observations (Y) per time step
+> Nobs = 50 # no of observations (Y) per time step
 > del_t = 0.01 # discrete approximation of dt
 > tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-> lam_o = diag(10, 3) # prior covariance matrix of X[0]
+> lam_o = diag(1, 3) # prior covariance matrix of X[0]
 > inv.lam_o = solve(lam_o)
 > alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 > alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
@@ -131,17 +131,17 @@ rstan_options(auto_write = TRUE)
 > R = diag(2, 3) # observational error
 > inv_R = solve(R)
 > mu = 0
-> sigma2 = 1e1
+> sigma2 = 1e0
 > mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 > #mu = matrix(mu_truth, nrow = 3)
-> mu = matrix(rep(0, 33), nrow = 3)
+> mu = rep(0, 33)
 > n.X = 3 * (N + 1)
 > n.theta = 33
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
 > seq_t = seq(2, N + 1, N / K)
 > n = 1e4
-> burn_in_n = 5e3
+> burn_in_n = 2e3
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
@@ -156,98 +156,67 @@ rstan_options(auto_write = TRUE)
 > load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 > init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,-c(1,2,3)], -3)
 > #ans = linchpin(1e4, init)
-> mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
-> model = stan_model('l63_hmc.stan')
+> #mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
+> model = stan_model('attempt2.stan')
 > named_list2 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3))
 > #initial = list(named_list1, named_list2)
 > initial = list(named_list2)
 > options(mc.cores = 2)
-> 
+> load('hmc_td_4_noInt_nuts_lam0_1')
+> p6 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
 > initf <- function() {
 +     print('you shall not pass***************************************8')
-<<<<<<< HEAD
-+     return(list(X = X, B_vec = init[(n.X + 1):(n.X + n.theta)] ))
++     return(list(X = as.numeric(X), B_vec = colMeans(p6[,1,1:33]) ))
 + }
 > 
 > chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-+                  "max tree depth is ", 7, " \n starting from ..._init ", "\n priors centered at ", 0, 
-+                  " variance ", sigma2, " time period ",20))
++                  "max tree depth is ", 5, " \n starting from ..._init ", "\n priors centered at truth truth ", 
++                  " variance ", sigma2, " lam_0 is ", lam_o[1,1], " time period ",20, " Nobs ", Nobs, "\n no intercept model"))
 >                 
 > print(chain_info)
-[1] "no of samples from MC is  50000  "                    
-[2] " using warmup  20000 max tree depth is  7  "          
-[3] " starting from ..._init  "                            
-[4] " priors centered at  0  variance  10  time period  20"
-> fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
-+                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
+[1] "no of samples from MC is  10000  "                                                     
+[2] " using warmup  2000 max tree depth is  5  "                                            
+[3] " starting from ..._init  "                                                             
+[4] " priors centered at truth truth   variance  1  lam_0 is  1  time period  20  Nobs  50 "
+[5] " no intercept model"                                                                   
+> fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[,1], 
++                             mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
 +                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-+                             chains = 1, init = initf, control = list(max_treedepth = 7), pars = c("B_vec"))
++                             chains = 1, init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
 [1] "you shall not pass***************************************8"
 
-SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 1).
-Chain 1: Unrecoverable error evaluating the log probability at the initial value.
-Chain 1: mismatch in number dimensions declared and found in context; processing stage=parameter initialization; variable name=X; dims declared=(6003); dims found=(3,2001)
-[1] "Error in sampler$call_sampler(args_list[[i]]) : "                                                                                                                    
-[2] "  mismatch in number dimensions declared and found in context; processing stage=parameter initialization; variable name=X; dims declared=(6003); dims found=(3,2001)"
-error occurred during calling the sampler; sampling not done
-> 
-> p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
-Stan model 'l63_hmc' does not contain samples.
-> #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
-> to_save = list(fit, chain_info)
-> save(to_save, file = "hmc_td_8")
-=======
-+     return(list(X = as.numeric(X), B_vec = init[(n.X + 1):(n.X + n.theta)] ))
-+ }
-> 
-> chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-+                  "max tree depth is ", 4, " \n starting from ..._init ", "\n priors centered at ", 0, 
-+                  " variance ", sigma2, " time period ",20, "\n no intercept model"))
->                 
-> print(chain_info)
-[1] "no of samples from MC is  10000  "                     
-[2] " using warmup  5000 max tree depth is  4  "            
-[3] " starting from ..._init  "                             
-[4] " priors centered at  0  variance  10  time period  20 "
-[5] " no intercept model"                                   
-> fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
-+                             mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
-+                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-+                             chains = 1, init = initf, control = list(max_treedepth = 4), pars = c("B_vec"))
-[1] "you shall not pass***************************************8"
-
-SAMPLING FOR MODEL 'l63_hmc' NOW (CHAIN 1).
+SAMPLING FOR MODEL 'attempt2' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.005693 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 56.93 seconds.
+Chain 1: Gradient evaluation took 0 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
 Chain 1: Iteration:    1 / 10000 [  0%]  (Warmup)
 Chain 1: Iteration: 1000 / 10000 [ 10%]  (Warmup)
 Chain 1: Iteration: 2000 / 10000 [ 20%]  (Warmup)
-Chain 1: Iteration: 3000 / 10000 [ 30%]  (Warmup)
-Chain 1: Iteration: 4000 / 10000 [ 40%]  (Warmup)
-Chain 1: Iteration: 5000 / 10000 [ 50%]  (Warmup)
-Chain 1: Iteration: 5001 / 10000 [ 50%]  (Sampling)
+Chain 1: Iteration: 2001 / 10000 [ 20%]  (Sampling)
+Chain 1: Iteration: 3000 / 10000 [ 30%]  (Sampling)
+Chain 1: Iteration: 4000 / 10000 [ 40%]  (Sampling)
+Chain 1: Iteration: 5000 / 10000 [ 50%]  (Sampling)
 Chain 1: Iteration: 6000 / 10000 [ 60%]  (Sampling)
 Chain 1: Iteration: 7000 / 10000 [ 70%]  (Sampling)
 Chain 1: Iteration: 8000 / 10000 [ 80%]  (Sampling)
 Chain 1: Iteration: 9000 / 10000 [ 90%]  (Sampling)
 Chain 1: Iteration: 10000 / 10000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 303.628 seconds (Warm-up)
-Chain 1:                302.734 seconds (Sampling)
-Chain 1:                606.362 seconds (Total)
+Chain 1:  Elapsed Time: 304.812 seconds (Warm-up)
+Chain 1:                1238.45 seconds (Sampling)
+Chain 1:                1543.27 seconds (Total)
 Chain 1: 
 Warning messages:
-1: There were 5000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 4. See
+1: There were 8000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 5. See
 http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 2: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
 http://mc-stan.org/misc/warnings.html#bfmi-low 
 3: Examine the pairs() plot to diagnose sampling problems
  
-4: The largest R-hat is 1.75, indicating chains have not mixed.
+4: The largest R-hat is 1.32, indicating chains have not mixed.
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#r-hat 
 5: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
@@ -257,18 +226,32 @@ http://mc-stan.org/misc/warnings.html#bulk-ess
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#tail-ess 
 > 
-> p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
+> #fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[, 1],
+>                             #mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
+>                             #inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
+>                             #chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.04, int_time = 0.4),
+>                             #pars = c("B_vec"))
+> 
+> 
 > #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
-> to_save = list(fit, chain_info)
-> save(to_save, file = "hmc_td_4_noInt")
->>>>>>> 191e511667901013eef7afe2fa024ecefd1d54ea
+> to_save = list(fit2, chain_info)
+> save(to_save, file = "hmc_td_5_noInt_nuts_nobs50_lam0_1_sigma_1_mutruth")
+> p23 = extract(fit2, inc_warmup = FALSE, permuted = FALSE)
+> matrix(colMeans(p23[, 1, 1:33]), nrow = 3)
+            [,1]       [,2]       [,3]         [,4]         [,5]         [,6]
+[1,] -10.0676921  9.7965711  0.1609185  0.042793620 -0.012554905 -0.005431524
+[2,]  28.0226492 -0.5344629  0.1983100 -0.003108807 -0.004024845 -0.007466222
+[3,]   0.1726834 -0.4899509 -0.9209692  0.470608989  0.047724263 -0.074048935
+             [,7]         [,8]          [,9]      [,10]        [,11]
+[1,] -0.047402292  0.007816881  0.0009565362 -0.0166165  0.002654110
+[2,] -0.005653813 -0.020507733 -0.9951304594  0.1841256 -0.016072690
+[3,]  0.639179920  0.017267582  0.0014477734 -0.3061989  0.004087992
 > 
 > ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
+> #pdf("L63_TS_linchpin_hmc_1e5_35_lam0_10.pdf", height = 6, width = 6)
+> #plot.ts(hmc[,c(3,5)], main = 'hmc n=1e5')
+> #dev.off()
 > 
 > proc.time()
-   user  system elapsed 
-<<<<<<< HEAD
- 40.390   6.311  48.133 
-=======
-626.282   7.593 654.642 
->>>>>>> 191e511667901013eef7afe2fa024ecefd1d54ea
+    user   system  elapsed 
+1585.234    7.858 1617.092 

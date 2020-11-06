@@ -85,10 +85,10 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
 # hyper-parameters
 to = 0 # initial time
 tf = 20 # final time
-Nobs = 10 # no of observations (Y) per time step
+Nobs = 50 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-lam_o = diag(10, 3) # prior covariance matrix of X[0]
+lam_o = diag(1, 3) # prior covariance matrix of X[0]
 inv.lam_o = solve(lam_o)
 alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
@@ -105,17 +105,17 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 1e1
+sigma2 = 1e0
 mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 #mu = matrix(mu_truth, nrow = 3)
-mu = matrix(rep(0, 33), nrow = 3)
+mu = rep(0, 33)
 n.X = 3 * (N + 1)
 n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 seq_t = seq(2, N + 1, N / K)
 n = 1e4
-burn_in_n = 5e3
+burn_in_n = 2e3
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -130,32 +130,43 @@ named_list1 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
 load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,-c(1,2,3)], -3)
 #ans = linchpin(1e4, init)
-mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
-model = stan_model('l63_hmc.stan')
+#mu_truth = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
+model = stan_model('attempt2.stan')
 named_list2 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3))
 #initial = list(named_list1, named_list2)
 initial = list(named_list2)
 options(mc.cores = 2)
-
+load('hmcinit')
+p6 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
 initf <- function() {
     print('you shall not pass***************************************8')
-    return(list(X = as.numeric(X), B_vec = init[(n.X + 1):(n.X + n.theta)] ))
+    return(list(X = as.numeric(X), B_vec = hmcinit ))
 }
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-                 "max tree depth is ", 4, " \n starting from ..._init ", "\n priors centered at ", 0, 
-                 " variance ", sigma2, " time period ",20, "\n no intercept model"))
+                 "max tree depth is ", 5, " \n starting from ..._init ", "\n priors centered at truth truth ", 
+                 " variance ", sigma2, " lam_0 is ", lam_o[1,1], " time period ",20, " Nobs ", Nobs, "\n no intercept model"))
                 
 print(chain_info)
-fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[,1], lam_0 = lam_o,
-                            mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
+fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[,1], 
+                            mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
-                            chains = 1, init = initf, control = list(max_treedepth = 4), pars = c("B_vec"))
+                            chains = 1, init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
 
-p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
+#fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[, 1],
+                            #mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
+                            #inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
+                            #chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.04, int_time = 0.4),
+                            #pars = c("B_vec"))
+
+
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
-to_save = list(fit, chain_info)
-save(to_save, file = "hmc_td_4_noInt")
-
+to_save = list(fit2, chain_info)
+save(to_save, file = "hmc_td_5_noInt_nuts_nobs50_lam0_1_sigma_1_mutruth")
+p23 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
+matrix(colMeans(p23[, 1, 1:33]), nrow = 3)
 
 ## compare with n=1e5v metrop runs starting from truth - 7202.980 seconds
+#pdf("L63_TS_linchpin_hmc_1e5_35_lam0_10.pdf", height = 6, width = 6)
+#plot.ts(hmc[,c(3,5)], main = 'hmc n=1e5')
+#dev.off()
