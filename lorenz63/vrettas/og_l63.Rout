@@ -1,7 +1,7 @@
 
-R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
 Copyright (C) 2020 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin17.0 (64-bit)
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -25,7 +25,7 @@ Type 'q()' to quit R.
 > library(rstan)
 Loading required package: StanHeaders
 Loading required package: ggplot2
-rstan (Version 2.21.1, GitRev: 2e1f913d3ca3)
+rstan (Version 2.21.2, GitRev: 2e1f913d3ca3)
 For execution on a local, multicore CPU with excess RAM we recommend calling
 options(mc.cores = parallel::detectCores()).
 To avoid recompilation of unchanged Stan programs, we recommend calling
@@ -87,12 +87,12 @@ rstan_options(auto_write = TRUE)
 > #scale[c(6007, 6010, 6012)] <- 100
 > 
 > seq_t = seq(2, N + 1, N / K)
-> n = 1e3
-> burn_in_n = 1e2
+> n = 5e4
+> burn_in_n = n/2
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
-> load('burninX')
+> load('../burninX')
 > Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 > 
 > options(mc.cores = 2)
@@ -104,29 +104,27 @@ rstan_options(auto_write = TRUE)
 +     print('you shall not pass***************************************8')
 +     return(list(X = init[(1:n.X)], theta = init[(n.X + 1):(n.X + n.theta)], sigma_vec = init[(n.X + n.theta + 1):(n.param)]))
 + }
-> model = stan_model('og_l63.stan')
+> model = stan_model('attempt2og.stan')
 > 
-> fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[, 1], lam_0 = lam_o,
-+                             del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R, inv_lam_0 = inv.lam_o, n_X = n.X,
-+                             alpha1 = alpha1, alpha2 = alpha2, alpha3 = alpha3, beta1 = beta1, beta2 = beta2, beta3 = beta3,
-+                             n_theta = n.theta, n_sigma = n.sigma, n_param = n.param), iter = n, warmup = burn_in_n,
-+                             chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.004, int_time = 0.2),
-+                             pars = c("theta", "sigma_vec"))
+> 
+> fit <- sampling(model, list(N = N, K = K, n_X = n.X, n_theta = n.theta, n_sigma = n.sigma, y = Y, seq_t = seq_t, inv_R = inv_R,
++                 inv_lam_0 = inv.lam_o, tau_0 = tau_o[, 1], del_t = del_t, a1 = alpha1, a2 = alpha2, a3 = alpha3, b1 = beta1, b2 = beta2,
++                 b3 = beta3, a4 = a4, b4 = b4), iter = n, warmup = burn_in_n, chains = 1, init = initf, algorithm = "HMC",
++                 control = list(stepsize = 0.004, int_time = 0.2), pars = c("theta", "sigma_vec"))
 [1] "you shall not pass***************************************8"
 
-SAMPLING FOR MODEL 'og_l63' NOW (CHAIN 1).
+SAMPLING FOR MODEL 'attempt2og' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.004578 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 45.78 seconds.
+Chain 1: Gradient evaluation took 0.015625 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 156.25 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
-Chain 1: WARNING: There aren't enough warmup iterations to fit the
-Chain 1:          three stages of adaptation as currently configured.
-Chain 1:          Reducing each adaptation stage to 15%/75%/10% of
-Chain 1:          the given number of warmup iterations:
-Chain 1:            init_buffer = 15
-Chain 1:            adapt_window = 75
-Chain 1:            term_buffer = 10
-Chain 1: 
-Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+Chain 1: Iteration:     1 / 50000 [  0%]  (Warmup)
+Chain 1: Iteration:  5000 / 50000 [ 10%]  (Warmup)
+Chain 1: Iteration: 10000 / 50000 [ 20%]  (Warmup)
+Chain 1: Iteration: 15000 / 50000 [ 30%]  (Warmup)
+Chain 1: Iteration: 20000 / 50000 [ 40%]  (Warmup)
+Chain 1: Iteration: 25000 / 50000 [ 50%]  (Warmup)
+Chain 1: Iteration: 25001 / 50000 [ 50%]  (Sampling)
+Killed
