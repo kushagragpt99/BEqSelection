@@ -72,20 +72,6 @@ rstan_options(auto_write = TRUE)
 > n.theta = 3
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
-> 
-> 
-> X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
-> Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
-> init = numeric(n.param)
-> init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-> init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
-> init[(n.X + n.theta + 1):(n.param)] = 6 # inital \Sigma should also be positive semi definite
-> 
-> scale <- rep(.003, n.param)
-> scale[(n.X + 1):(n.X + n.theta)] <- .05
-> scale[(n.X + n.theta + 1):(n.param)] <- .2
-> #scale[c(6007, 6010, 6012)] <- 100
-> 
 > seq_t = seq(2, N + 1, N / K)
 > n = 25e3
 > burn_in_n = 5e3
@@ -100,18 +86,24 @@ rstan_options(auto_write = TRUE)
 > init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 > init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 > init[(n.X + n.theta + 1):(n.param)] = 6
+> 
 > initf <- function() {
 +     print('you shall not pass***************************************8')
 +     return(list(X = init[(1:n.X)], theta = init[(n.X + 1):(n.X + n.theta)], sigma_vec = init[(n.X + n.theta + 1):(n.param)]))
 + }
 > model = stan_model('og_l63.stan')
 > 
+> #fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[, 1], lam_0 = lam_o,
+>                             #del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R, inv_lam_0 = inv.lam_o, n_X = n.X,
+>                             #alpha1 = alpha1, alpha2 = alpha2, alpha3 = alpha3, beta1 = beta1, beta2 = beta2, beta3 = beta3,
+>                             #n_theta = n.theta, n_sigma = n.sigma, n_param = n.param), iter = n, warmup = burn_in_n,
+>                             #chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.04, int_time = 0.2),
+>                             #pars = c("theta", "sigma_vec"))
 > fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[, 1], lam_0 = lam_o,
 +                             del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R, inv_lam_0 = inv.lam_o, n_X = n.X,
 +                             alpha1 = alpha1, alpha2 = alpha2, alpha3 = alpha3, beta1 = beta1, beta2 = beta2, beta3 = beta3,
 +                             n_theta = n.theta, n_sigma = n.sigma, n_param = n.param), iter = n, warmup = burn_in_n,
-+                             chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.004, int_time = 0.2),
-+                             pars = c("theta", "sigma_vec"))
++                             chains = 1, init = initf, control = list(max_treedepth = 2), pars = c("theta", "sigma_vec"))
 [1] "you shall not pass***************************************8"
 
 SAMPLING FOR MODEL 'og_l63' NOW (CHAIN 1).
@@ -122,4 +114,53 @@ Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
 Chain 1: Iteration:     1 / 25000 [  0%]  (Warmup)
-Killed
+Chain 1: Iteration:  2500 / 25000 [ 10%]  (Warmup)
+Chain 1: Iteration:  5000 / 25000 [ 20%]  (Warmup)
+Chain 1: Iteration:  5001 / 25000 [ 20%]  (Sampling)
+Chain 1: Iteration:  7500 / 25000 [ 30%]  (Sampling)
+Chain 1: Iteration: 10000 / 25000 [ 40%]  (Sampling)
+Chain 1: Iteration: 12500 / 25000 [ 50%]  (Sampling)
+Chain 1: Iteration: 15000 / 25000 [ 60%]  (Sampling)
+Chain 1: Iteration: 17500 / 25000 [ 70%]  (Sampling)
+Chain 1: Iteration: 20000 / 25000 [ 80%]  (Sampling)
+Chain 1: Iteration: 22500 / 25000 [ 90%]  (Sampling)
+Chain 1: Iteration: 25000 / 25000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 63.2344 seconds (Warm-up)
+Chain 1:                240.359 seconds (Sampling)
+Chain 1:                303.594 seconds (Total)
+Chain 1: 
+Warning messages:
+1: There were 20000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 2. See
+http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+2: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+http://mc-stan.org/misc/warnings.html#bfmi-low 
+3: Examine the pairs() plot to diagnose sampling problems
+ 
+4: The largest R-hat is 1.88, indicating chains have not mixed.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#r-hat 
+5: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#bulk-ess 
+6: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#tail-ess 
+>                             
+> 
+> chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
++                  "max tree depth is ", 3, " \n starting from truth ", "\n priors centered at truth",
++                  " time period ", 20))
+> 
+> print(chain_info)
+[1] "no of samples from MC is  25000  "         
+[2] " using warmup  5000 max tree depth is  3  "
+[3] " starting from truth  "                    
+[4] " priors centered at truth  time period  20"
+> p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
+> to_save = list(fit, chain_info)
+> save(to_save, file = "ogl63_hmc_vrettas")  ######not 5, 3
+> 
+> proc.time()
+   user  system elapsed 
+348.171   6.703 361.220 

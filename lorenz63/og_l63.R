@@ -46,23 +46,9 @@ n.X = 3 * (N + 1)
 n.theta = 3
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
-
-
-X = euler_maruyama(rmvnorm(1, tau_o, lam_o), del_t, N, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
-Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
-init = numeric(n.param)
-init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
-init[(n.X + n.theta + 1):(n.param)] = 6 # inital \Sigma should also be positive semi definite
-
-scale <- rep(.003, n.param)
-scale[(n.X + 1):(n.X + n.theta)] <- .05
-scale[(n.X + n.theta + 1):(n.param)] <- .2
-#scale[c(6007, 6010, 6012)] <- 100
-
 seq_t = seq(2, N + 1, N / K)
-n = 25e3
-burn_in_n = 5e3
+n = 25e2
+burn_in_n = 5e2
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -74,23 +60,24 @@ init = numeric(n.param)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 init[(n.X + n.theta + 1):(n.param)] = 6
+
 initf <- function() {
     print('you shall not pass***************************************8')
     return(list(X = init[(1:n.X)], theta = init[(n.X + 1):(n.X + n.theta)], sigma_vec = init[(n.X + n.theta + 1):(n.param)]))
 }
 model = stan_model('og_l63.stan')
-
-fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[, 1], lam_0 = lam_o,
-                            del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R, inv_lam_0 = inv.lam_o, n_X = n.X,
-                            alpha1 = alpha1, alpha2 = alpha2, alpha3 = alpha3, beta1 = beta1, beta2 = beta2, beta3 = beta3,
-                            n_theta = n.theta, n_sigma = n.sigma, n_param = n.param), iter = n, warmup = burn_in_n,
-                            chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.004, int_time = 0.2),
-                            pars = c("theta", "sigma_vec"))
+print("stan model compiled")
 #fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[, 1], lam_0 = lam_o,
                             #del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R, inv_lam_0 = inv.lam_o, n_X = n.X,
                             #alpha1 = alpha1, alpha2 = alpha2, alpha3 = alpha3, beta1 = beta1, beta2 = beta2, beta3 = beta3,
                             #n_theta = n.theta, n_sigma = n.sigma, n_param = n.param), iter = n, warmup = burn_in_n,
-                            #chains = 1, init = initf, control = list(max_treedepth = 2), pars = c("theta", "sigma_vec"))
+                            #chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.04, int_time = 0.2),
+                            #pars = c("theta", "sigma_vec"))
+fit <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, R = R, tau_0 = tau_o[, 1], lam_0 = lam_o,
+                            del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R, inv_lam_0 = inv.lam_o, n_X = n.X,
+                            alpha1 = alpha1, alpha2 = alpha2, alpha3 = alpha3, beta1 = beta1, beta2 = beta2, beta3 = beta3,
+                            n_theta = n.theta, n_sigma = n.sigma, n_param = n.param), iter = n, warmup = burn_in_n,
+                            chains = 1, init = initf, control = list(max_treedepth = 2), pars = c("theta", "sigma_vec"))
                             
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
@@ -100,4 +87,4 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmu
 print(chain_info)
 p1 = extract(fit, inc_warmup = TRUE, permuted = FALSE)
 to_save = list(fit, chain_info)
-save(to_save, file = "ogl63_hmc_vrettas")  ######not 5, 3
+#save(to_save, file = "ogl63_hmc_vrettas")  ######not 5, 3

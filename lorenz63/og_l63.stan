@@ -93,17 +93,17 @@ model {
     inv_Sig = inverse(Sigma);
 
     for(i in 1:N)   {
-        del_X = (X_n[1:3,i+1] - X_n[1:3,i])/del_t;
+        del_X = (X_n[1:3,i+1] - X_n[1:3,i]);
         f_k = drift_fun(X_n[1:3,i], theta);
         p2 = p2 + (del_X / del_t - f_k)' * inv_Sig * (del_X / del_t - f_k);
     }
-    p2 = p2 -0.5 * p2 * del_t;
-    p2 = p2 - 0.5 * ( X_n[1:3, 1] - tau_0 )' * inv_lam_0 * ( X_n[1:3, 1] - tau_0 ) - (N *0.5) * log_determinant(Sigma*del_t);
+    p2 *= (-0.5) * del_t;
+    p2 += - 0.5 * ( X_n[1:3, 1] - tau_0 )' * inv_lam_0 * ( X_n[1:3, 1] - tau_0 ) - (N *0.5) * log_determinant(Sigma);
 
     p3 = (alpha1 - 1) * log(theta[1]) - theta[1] / beta1 + (alpha2 - 1) * log(theta[2]) - theta[2] / beta2 + (alpha3 - 1) * log(theta[3]) - theta[3] / beta3;
 
     p4 = inv_gamma_lpdf(Sigma[1,1] | a4, b4) + inv_gamma_lpdf(Sigma[2,2] | a4, b4) + inv_gamma_lpdf(Sigma[3,3] | a4, b4);
-
+    //p4 = -(a4+1)*(log(Sigma[1,1]) + log(Sigma[2,2]) + log(Sigma[3,3])) - b4*(1.0/Sigma[1,1] + 1.0/Sigma[2,2] + 1.0/Sigma[3,3]);
     target += p1+p2+p3+p4;
 }
 

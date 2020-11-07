@@ -4,13 +4,13 @@ library(mcmc)
 library(invgamma)
 
 make_tilde <- function(X,t) {
-    X_vec = c(1, X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
+    X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
     return(X_vec)
 }
 # drifet function for Lorenz-63
 drift_fun <- function(X, t, B) {
     #print(make_tilde(X,t))
-    tildeX = matrix(make_tilde(X, t), nrow = 12, ncol = 1)
+    tildeX = matrix(make_tilde(X, t), nrow = 11, ncol = 1)
     B_mat = matrix(B, nrow = 3)
     #print(B)
     #print(dim(tildeX))
@@ -73,16 +73,16 @@ linchpin <- function(n, init) {
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
     scale = rep(0.0005, n.X + n.theta)
     scale[(n.X + 1):(n.X + n.theta)] = 0.001
-    scale[n.X + non_zero] = 0.01
-    #scale[(n.X + 1):(n.X + 3) ] = 0.001
-    scale[n.X + c(24,29)] = 0.008
-    #scale[n.X + c(3,6,14,17,22,23)] = 0.003
-    scale[n.X + 8] = 0.01
-    scale[n.X + c(4,5,7)] = 0.08  # 0.05
-    scale[n.X + c(7)] = 0.08
-    #scale[n.X+c(3)] = 0.0008
-    # scale[n.X+4] = 0.5
-    scale[n.X+12] = 0.005
+    #scale[n.X + non_zero] = 0.002
+    ##scale[(n.X + 1):(n.X + 3) ] = 0.001
+    #scale[n.X + c(24,29)] = 0.002
+    ##scale[n.X + c(3,6,14,17,22,23)] = 0.003
+    #scale[n.X + 8] = 0.002
+    #scale[n.X + c(4,5,7)] = 0.002  # 0.05
+    #scale[n.X + c(7)] = 0.002
+    ##scale[n.X+c(3)] = 0.0008
+    ## scale[n.X+4] = 0.5
+    #scale[n.X+12] = 0.002
     accept.prob = 0
     #chain = metrop(ludfun, init, n, scale = scale)
     #print(chain$accept)
@@ -148,32 +148,32 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 1
-mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
+sigma2 = 10
+mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 n.X = 3 * (N + 1)
-n.theta = 36
+n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('burninX')
+load('../burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,mu_truth,sigma=diag(1/50,n.theta))
 non_zero = c(4,5,7,8,12,24,29)
-load("l63_linch_reg_bsv_0001_T_20_pv_10_init")
-init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
-ans = linchpin(1e4, init)
+load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
+init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
+ans = linchpin(5e2, init)
 pm = ans[[1]]
 print(matrix(colMeans(pm), nrow=3))
-plot.ts(pm[, 1:10])
-plot.ts(pm[, 11:20])
-plot.ts(pm[, 21:30])
+#plot.ts(pm[, 1:10])
+#plot.ts(pm[, 11:20])
+#plot.ts(pm[, 21:30])
 #plot.ts(pm[, 31:39])
-save(ans, file = "l63_linch_reg_bsv_0001_T_20_pv_10_final")
+#save(ans, file = "l63_linch_reg_bsv_0001_T_20_pv_10_final")
 
 #load('l63_linch_reg')
 #pm = ans[[1]]
