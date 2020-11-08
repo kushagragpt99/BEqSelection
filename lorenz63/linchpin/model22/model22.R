@@ -4,13 +4,13 @@ library(mcmc)
 library(invgamma)
 
 make_tilde <- function(X, t) {
-    X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
+    X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1])
     return(X_vec)
 }
 # drifet function for Lorenz-63
 drift_fun <- function(X, t, B) {
     #print(make_tilde(X,t))
-    tildeX = matrix(make_tilde(X, t), nrow = 11, ncol = 1)
+    tildeX = matrix(make_tilde(X, t), nrow = 9, ncol = 1)
     B_mat = matrix(B, nrow = 3)
     #print(B)
     #print(dim(tildeX))
@@ -149,30 +149,30 @@ R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
 sigma2 = 10
-mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
+mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 1))
 n.X = 3 * (N + 1)
-n.theta = 33
+n.theta = 27
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 n <- 5e5
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('../burninX')
+load('../../burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
 non_zero = c(4, 5, 7, 8, 12, 24, 29)
-load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
-init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
+load("../../l63_linch_reg_bsv_0001_T_20_pv_10_init")
+init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -9)
 ans = linchpin(n, init)
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from init ", "\n priors centered at 0 with varuance ",
-                            sigma2, " time period ", tf, " lam_0 is 1"))
+                            sigma2, " time period ", tf, " lam_0 is 1", "no t t^2"))
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "l63_linch_T_20_pv_10_5e5_2")
+save(to_save, file = "l63_linch_T_20_pv_10_5e5_2_no_t")
 pm = ans[[1]]
 print(matrix(colMeans(pm), nrow = 3))

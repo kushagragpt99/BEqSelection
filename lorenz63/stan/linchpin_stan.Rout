@@ -145,3 +145,67 @@ Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
 Chain 1: Iteration:     1 / 20000 [  0%]  (Warmup)
+Chain 1: Iteration:  2000 / 20000 [ 10%]  (Warmup)
+Chain 1: Iteration:  4000 / 20000 [ 20%]  (Warmup)
+Chain 1: Iteration:  6000 / 20000 [ 30%]  (Warmup)
+Chain 1: Iteration:  8000 / 20000 [ 40%]  (Warmup)
+Chain 1: Iteration: 10000 / 20000 [ 50%]  (Warmup)
+Chain 1: Iteration: 10001 / 20000 [ 50%]  (Sampling)
+Chain 1: Iteration: 12000 / 20000 [ 60%]  (Sampling)
+Chain 1: Iteration: 14000 / 20000 [ 70%]  (Sampling)
+Chain 1: Iteration: 16000 / 20000 [ 80%]  (Sampling)
+Chain 1: Iteration: 18000 / 20000 [ 90%]  (Sampling)
+Chain 1: Iteration: 20000 / 20000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 5078.23 seconds (Warm-up)
+Chain 1:                5123.91 seconds (Sampling)
+Chain 1:                10202.1 seconds (Total)
+Chain 1: 
+Warning messages:
+1: There were 10000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 8. See
+http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+2: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+http://mc-stan.org/misc/warnings.html#bfmi-low 
+3: Examine the pairs() plot to diagnose sampling problems
+ 
+4: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#bulk-ess 
+5: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#tail-ess 
+> 
+> chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
++                  "max tree depth is ", 4, " \n starting from init ", "\n priors centered at truth",
++                  " time period ", tf))
+> 
+> print(chain_info)
+[1] "no of samples from MC is  20000  "          
+[2] " using warmup  10000 max tree depth is  4  "
+[3] " starting from init  "                      
+[4] " priors centered at truth  time period  20" 
+> 
+> p2 = extract(fit, inc_warmup = FALSE, permuted = FALSE)
+> p2 = p2[,1,1:(n.X+n.theta)]
+> #p2 = p2[,1,1:(n.X+n.theta)]
+> to_save = list(fit, chain_info)
+> save(to_save, file = "nuts_linchpin_lam0_1_td_8") ######not 5, 3
+> #p2 = extract(to_save[[1]], inc_warmup = TRUE)
+> #colMeans(p1[, 1,])
+> 
+> #al = c(as.numeric(X) + rnorm(n.X, sd = 0.1), colMeans(p2$theta))
+> ans2 = linchpin(n/2, init)
+> colMeans(ans2[[1]])
+[1] 10.212736 28.014704  2.657076 10.187198  3.494874 51.408339
+> #pm = ans[[1]]
+> #colMeans(pm)
+> 
+> #p2.1 = matrix(0,nrow = 500, ncol = n.X+n.theta)
+> #for (i in 1:500) {
+>     #p2.1[i,] = c(as.numeric(al[i,,]),10,28,3)
+> #}
+> 
+> 
+> proc.time()
+     user    system   elapsed 
+10533.905   102.109 11752.548 
