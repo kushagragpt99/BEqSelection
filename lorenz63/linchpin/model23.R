@@ -3,7 +3,7 @@ library(mvtnorm)
 library(mcmc)
 library(invgamma)
 
-make_tilde <- function(X,t) {
+make_tilde <- function(X, t) {
     X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
     return(X_vec)
 }
@@ -33,7 +33,7 @@ ludfun <- function(state) {
 
     # all the elements of theta should be positive
     #if (min(theta) <= 0)
-        #return(-Inf)
+    #return(-Inf)
 
     # Extracting observed data
     X_t = X_n[, seq(2, N + 1, N / K)]
@@ -56,7 +56,7 @@ ludfun <- function(state) {
     #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
     ######################################################################
 
-    p2 = (-1/2)*sum((B_vec-mu)^2) / sigma2
+    p2 = (-1 / 2) * sum((B_vec - mu) ^ 2) / sigma2
 
     f = mapply(drift_fun, X = split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), t = del_t * (0:N), MoreArgs = list(B_vec))
     #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, B_vec, list(1,2))
@@ -87,7 +87,7 @@ linchpin <- function(n, init) {
     #chain = metrop(ludfun, init, n, scale = scale)
     #print(chain$accept)
     for (i in 1:n) {
-        if(i %% 1e3 == 0) print(c(i, accept.prob/i))
+        if (i %% 1e3 == 0) print(c(i, accept.prob / i))
         chain = metrop(ludfun, init, 1, scale = scale)
         state = chain$batch
         accept.prob = accept.prob + chain$accept
@@ -104,10 +104,10 @@ linchpin <- function(n, init) {
         Sigma[2] = rinvgamma(1, shape = N / 2 + a4, rate = b4 + beta_tmp[2])
         Sigma[3] = rinvgamma(1, shape = N / 2 + a4, rate = b4 + beta_tmp[3])
 
-        param_mat[i, (n.theta+1):(n.theta + n.sigma)] = Sigma
+        param_mat[i, (n.theta + 1):(n.theta + n.sigma)] = Sigma
         init = state
     }
-    print(accept.prob/n)
+    print(accept.prob / n)
     X_avg = X_avg / n
     final_output = list(param_mat, X_avg)
     return(final_output)
@@ -131,7 +131,7 @@ tf = 20 # final time
 Nobs = 10 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-lam_o = diag(10, 3) # prior covariance matrix of X[0]
+lam_o = diag(1, 3) # prior covariance matrix of X[0]
 inv.lam_o = solve(lam_o)
 alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
@@ -148,7 +148,7 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 10
+sigma2 = 1
 mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 n.X = 3 * (N + 1)
 n.theta = 33
@@ -163,19 +163,16 @@ Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # obs
 init = numeric(n.X + n.theta)
 init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 
-init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,mu_truth,sigma=diag(1/50,n.theta))
-non_zero = c(4,5,7,8,12,24,29)
+init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
+non_zero = c(4, 5, 7, 8, 12, 24, 29)
 load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
 ans = linchpin(n, init)
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from init ", "\n priors centered at 0 with varuance ",
-                            sigma2, " time period ", tf, " lam_0 is 10"))
+                            sigma2, " time period ", tf, " lam_0 is 1"))
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "l63_linch_T_20_5e5_1")
+save(to_save, file = "l63_linch_T_20_pv_10_5e5_3")
 pm = ans[[1]]
-print(matrix(colMeans(pm), nrow=3))
-
-
-
+print(matrix(colMeans(pm), nrow = 3))

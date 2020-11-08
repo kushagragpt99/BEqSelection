@@ -106,4 +106,3 @@ model {
     //p4 = -(a4+1)*(log(Sigma[1,1]) + log(Sigma[2,2]) + log(Sigma[3,3])) - b4*(1.0/Sigma[1,1] + 1.0/Sigma[2,2] + 1.0/Sigma[3,3]);
     target += p1+p2+p3+p4;
 }
-

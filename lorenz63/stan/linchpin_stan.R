@@ -84,7 +84,7 @@ n.theta = 3
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 seq_t = seq(2, N + 1, N / K)
-n = 2e3
+n = 2e4
 burn_in_n = n/2
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
@@ -120,7 +120,7 @@ p2 = extract(fit, inc_warmup = FALSE, permuted = FALSE)
 p2 = p2[,1,1:(n.X+n.theta)]
 #p2 = p2[,1,1:(n.X+n.theta)]
 to_save = list(fit, chain_info)
-#save(to_save, file = "nuts_linchpin_lam0_1_td_8") ######not 5, 3
+save(to_save, file = "nuts_linchpin_lam0_1_td_8") ######not 5, 3
 #p2 = extract(to_save[[1]], inc_warmup = TRUE)
 #colMeans(p1[, 1,])
 
