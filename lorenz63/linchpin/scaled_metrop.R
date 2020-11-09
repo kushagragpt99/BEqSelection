@@ -220,7 +220,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n using Mod o
 ans = linchpin(n, init, scale_tuned_mod)
 
 to_save = list(ans, chain_info)
-save(to_save, file = "scaled_metrop_no_int")
+#save(to_save, file = "scaled_metrop_no_int")
 #chain_info = paste(c("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter,
                  #" \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
                  #20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)), collapse = " ")

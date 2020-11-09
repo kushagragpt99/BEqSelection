@@ -71,10 +71,12 @@ ludfun <- function(state) {
 linchpin <- function(n, init, scale_vec) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.0005 * 1.5, n.X + n.theta)
-    scale[(n.X + 1):(n.X + n.theta)] = 0.001 /1.05
-    scale[n.X + non_zero] = scale_vec[non_zero]
-    scale[n.X + param_i] = 1.5 * scale_vec[param_i]
+    scale = rep(0.0005 * 1, n.X + n.theta)
+    scale[(n.X + 1):(n.X + n.theta)] = 0.001 / 1.1
+    scale[n.X + non_zero] = .4 * scale_vec[non_zero]
+    scale[n.X + param_i] = 1.2 * scale_vec[param_i]
+    scale[n.X + param_i[c(5)]] = 1.8 * scale_vec[param_i[c(5)]]
+    scale[n.X + param_i[c(2)]] = 10 * scale_vec[param_i[c(2)]]
     #scale[n.X + non_zero] = 0.002
     ##scale[(n.X + 1):(n.X + 3) ] = 0.001
     #scale[n.X + c(24,29)] = 0.002
@@ -175,6 +177,8 @@ load('../l63_linch_T_20_pv_10_5e5_3')
 var1 = cov(to_save[[1]][[1]][, 1:33])
 scale_vec = 0.04 * sqrt(diag(var1))
 ans = linchpin(n, init, scale_vec)
+plot.ts(ans[[1]][, param_i])
+plot.ts(ans[[1]][, non_zero])
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from init ", "\n priors centered at 0 with varuance ",
                             sigma2, " time period ", tf, " lam_0 is 1"))
