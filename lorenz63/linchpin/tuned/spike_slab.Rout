@@ -42,14 +42,13 @@ Type 'q()' to quit R.
 +     return(t(t(ans)))
 + }
 > 
-> ludfun <- function(state) {
+> ludfun <- function(state, gamma) {
 +     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
 +     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
 + 
 +     X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
 +     B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
 +     B_mat = matrix(B_vec, nrow = 3)
-+ 
 +     # all the elements of theta should be positive
 +     #if (min(theta) <= 0)
 +     #return(-Inf)
@@ -74,44 +73,48 @@ Type 'q()' to quit R.
 +     #p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))
 +     #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
 +     ######################################################################
-+ 
-+     p2 = (-1 / 2) * sum((B_vec - mu) ^ 2) / sigma2
++     B_cov_gamma = gamma * (tau1 ^ 2) + (1 - gamma) * (tau0 ^ 2)
++     p2 = dmvnorm(B_vec, sigma = diag(B_cov_gamma), log = TRUE)
++     #p2 = (-1 / 2) * sum((B_vec - mu) ^ 2) / sigma2
 + 
 +     f = mapply(drift_fun, X = split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), t = del_t * (0:N), MoreArgs = list(B_vec))
 +     #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, B_vec, list(1,2))
 +     del_X = t(diff(t(X_n)))
 +     beta_tmp = rowSums((del_X / del_t - f[, - (N + 1)]) ^ 2) * del_t / 2
-+     p3 = 3 * lgamma(a4 + N / 2) - (a4 + N / 2) * sum(log(b4 + beta_tmp))
++     p3 = - (a4 + N / 2) * sum(log(b4 + beta_tmp))
 + 
 +     return(p1 + p2 + p3)
 + 
 + }
 > 
+> sample_gamma <- function(B_vec) {
++     gamma = numeric(length = n.theta)
++     for (i in 1:n.theta) {
++         prob = q[i] * dnorm(B_vec[i], sd = tau1) / (q[i] * dnorm(B_vec[i], sd = tau1) + (1 - q[i]) * dnorm(B_vec[i], sd = tau0))
++         gamma[i] = rbinom(1,1,prob)
++     }
++     return(gamma)
++ }
+> 
 > linchpin <- function(n, init, scale_vec) {
 +     X_avg = numeric(length = n.X)
-+     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-+     scale = rep(0.0005*1, n.X + n.theta)
++     param_mat = matrix(, nrow = n, ncol = 2*n.theta + n.sigma)
++     scale = rep(0.0005 * 1, n.X + n.theta)
 +     scale[(n.X + 1):(n.X + n.theta)] = 0.001
-+     scale[n.X + non_zero] = .4*scale_vec[non_zero]
++     scale[n.X + non_zero] = .4 * scale_vec[non_zero]
 +     scale[n.X + param_i] = 1.2 * scale_vec[param_i]
 +     scale[n.X + param_i[c(5)]] = 1.8 * scale_vec[param_i[c(5)]]
-+     scale[n.X + param_i[c(2)]] = 10*scale_vec[param_i[c(2)]]
-+     #scale[n.X + non_zero] = 0.002
-+     ##scale[(n.X + 1):(n.X + 3) ] = 0.001
-+     #scale[n.X + c(24,29)] = 0.002
-+     ##scale[n.X + c(3,6,14,17,22,23)] = 0.003
-+     #scale[n.X + 8] = 0.002
-+     #scale[n.X + c(4,5,7)] = 0.002  # 0.05
-+     #scale[n.X + c(7)] = 0.002
-+     ##scale[n.X+c(3)] = 0.0008
-+     ## scale[n.X+4] = 0.5
-+     #scale[n.X+12] = 0.002
++     scale[n.X + param_i[c(2)]] = 10 * scale_vec[param_i[c(2)]]
++ 
 +     accept.prob = 0
-+     #chain = metrop(ludfun, init, n, scale = scale)
-+     #print(chain$accept)
++ 
 +     for (i in 1:n) {
-+         if (i %% (n/10) == 0) print(c(i, accept.prob / i))
-+         chain = metrop(ludfun, init, 1, scale = scale)
++         gamma = sample_gamma(init[(n.X + 1):(n.X + n.theta)])
++         param_mat[i, (n.theta + n.sigma + 1):(2 * n.theta + n.sigma)] = gamma
++ 
++         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
++ 
++         chain = metrop(ludfun, init, 1, scale = scale, gamma = gamma)
 +         state = chain$batch
 +         accept.prob = accept.prob + chain$accept
 +         X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
@@ -164,6 +167,8 @@ Type 'q()' to quit R.
 > beta3 = 0.5
 > a4 = 2
 > b4 = 6
+> tau1 = 10
+> tau0 = 0.5
 > 
 > K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
 > N = (tf - to) / del_t # no of discretizations of the Lorenz-63, i.e. size of X
@@ -177,7 +182,8 @@ Type 'q()' to quit R.
 > n.theta = 33
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
-> n <- 5e5
+> q = rep(0.5,n.theta) #runif(n.theta)
+> n <- 1e4
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
@@ -188,48 +194,63 @@ Type 'q()' to quit R.
 > 
 > init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
 > non_zero = c(4, 5, 7, 8, 12, 24, 29) - 3
-> param_i = c(1,2,4,9)
+> param_i = c(1, 2, 4, 9)
 > load("../../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 > init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
+> 
+> sigma_Y = mean(diag(var(t(Y))))
+> tau0 = sqrt(sigma_Y / (10 * K))
+> tau1 = sqrt(sigma_Y * max((n.theta^2.1)/(100*K), log(K)))
 > 
 > load('../l63_linch_T_20_5e5_1')
 > var1 = cov(to_save[[1]][[1]][, 1:33])
 > scale_vec = 0.04 * sqrt(diag(var1))
 > ans = linchpin(n, init, scale_vec)
-[1] 5.0000e+04 1.9394e-01
-[1] 1.0000e+05 1.9556e-01
-[1] 1.500000e+05 1.932467e-01
-[1] 2.00000e+05 1.93075e-01
-[1] 2.5000e+05 1.9352e-01
-[1] 3.000000e+05 1.934833e-01
-[1] 3.500000e+05 1.936429e-01
-[1] 4.000000e+05 1.937925e-01
-[1] 4.500000e+05 1.937444e-01
-[1] 5.00000e+05 1.94212e-01
-[1] 0.194212
-> plot.ts(ans[[1]][, param_i])
-> plot.ts(ans[[1]][,non_zero])
-> chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from init ", "\n priors centered at 0 with varuance ",
-+                             sigma2, " time period ", tf, " lam_0 is 10"))
+[1] 1000.000    0.224
+[1] 2e+03 2e-01
+[1] 3000.0000000    0.1943333
+[1] 4000.00000    0.19925
+[1] 5000.0000    0.1958
+[1] 6000.0000000    0.1943333
+[1] 7000.0000000    0.1932857
+[1] 8000.000    0.194
+[1] 9000.0000000    0.1925556
+[1] 1.000e+04 1.922e-01
+[1] 0.1922
+> #plot.ts(ans[[1]][, param_i])
+> #plot.ts(ans[[1]][, non_zero])
+> chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from init ", "\n priors spike slab ", " time period ",
++                             tf, " lam_0 is 10"))
 > 
 > print(chain_info)
-[1] "no of samples from MC is  5e+05  "                                    
-[2] " starting from init  "                                                
-[3] " priors centered at 0 with varuance  10  time period  20  lam_0 is 10"
+[1] "no of samples from MC is  10000  "                
+[2] " starting from init  "                            
+[3] " priors spike slab   time period  20  lam_0 is 10"
 > to_save = list(ans, chain_info)
-> save(to_save, file = "l63_linch_T_20_1e4_1_tuned")
-> pm = ans[[1]]
+> save(to_save, file = "l63_linch_T_20_1e4_1_spikes")
+> pm = ans[[1]][,1:(n.sigma+n.theta)]
 > 
 > print(matrix(colMeans(pm), nrow = 3))
-          [,1]      [,2]       [,3]        [,4]        [,5]         [,6]
-[1,] -5.192584 6.8884357  0.1014864 0.073905972  0.03484372 -0.005238161
-[2,] 26.110095 0.5593935  0.1866501 0.003144766 -0.01133805 -0.005785705
-[3,] -0.158043 0.2137641 -2.5946087 0.036898266 -0.01337173 -0.002469473
-            [,7]         [,8]         [,9]       [,10]       [,11]    [,12]
-[1,] -0.10693912  0.086634070 -0.133083217  0.03639858 -0.00547952 6.606290
-[2,]  0.01113199 -0.048995514 -0.943071646 -0.24252839  0.01130304 6.031663
-[3,]  0.98054393 -0.003436213  0.005365366 -0.11168017  0.01036464 6.128060
+           [,1]      [,2]         [,3]        [,4]        [,5]          [,6]
+[1,] -5.0251658 6.8000990  0.006064726  0.02811534  0.03328708  0.0007286292
+[2,] 25.8166413 0.1821039 -0.006252235 -0.14823482 -0.07371174  0.0066059453
+[3,] -0.1829196 0.2205059 -2.057997749  0.18570908 -0.01750921 -0.0262680649
+            [,7]         [,8]         [,9]      [,10]       [,11]    [,12]
+[1,] -0.07560684  0.086792045 -0.136044941 -0.1847998 0.006151451 6.474821
+[2,]  0.19203990 -0.038898803 -0.929656123 -0.1145015 0.002818568 6.060130
+[3,]  0.88978968 -0.003703576  0.006606684 -0.0783368 0.005572192 6.004009
+> 
+> pm2 = ans[[1]][, (n.sigma + n.theta + 1):(n.sigma + 2*n.theta)]
+> print(matrix(colMeans(pm2), nrow = 3))
+       [,1]   [,2]   [,3]   [,4]   [,5]   [,6]   [,7]   [,8]   [,9]  [,10]
+[1,] 1.0000 1.0000 0.0106 0.0092 0.0113 0.0113 0.0089 0.0108 0.0135 0.0177
+[2,] 1.0000 0.0144 0.0108 0.0127 0.0101 0.0083 0.0137 0.0082 0.9994 0.0132
+[3,] 0.0135 0.0179 1.0000 0.0138 0.0102 0.0084 0.9971 0.0104 0.0095 0.0090
+      [,11]
+[1,] 0.0097
+[2,] 0.0098
+[3,] 0.0107
 > 
 > proc.time()
-     user    system   elapsed 
-32320.015    71.842 33711.152 
+   user  system elapsed 
+662.156   2.015 689.296 

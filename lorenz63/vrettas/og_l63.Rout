@@ -53,7 +53,7 @@ rstan_options(auto_write = TRUE)
 > Nobs = 10 # no of observations (Y) per time step
 > del_t = 0.01 # discrete approximation of dt
 > tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-> lam_o = diag(1, 3) # prior covariance matrix of X[0]
+> lam_o = diag(10, 3) # prior covariance matrix of X[0]
 > inv.lam_o = solve(lam_o)
 > alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 > alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
@@ -125,8 +125,8 @@ rstan_options(auto_write = TRUE)
 
 SAMPLING FOR MODEL 'attempt2og' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
+Chain 1: Gradient evaluation took 0.015625 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 156.25 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -143,21 +143,21 @@ Chain 1: Iteration: 16000 / 20000 [ 80%]  (Sampling)
 Chain 1: Iteration: 18000 / 20000 [ 90%]  (Sampling)
 Chain 1: Iteration: 20000 / 20000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 454.203 seconds (Warm-up)
-Chain 1:                459.672 seconds (Sampling)
-Chain 1:                913.875 seconds (Total)
+Chain 1:  Elapsed Time: 459.234 seconds (Warm-up)
+Chain 1:                473.266 seconds (Sampling)
+Chain 1:                932.5 seconds (Total)
 Chain 1: 
 Warning messages:
-1: There were 26 divergent transitions after warmup. See
+1: There were 137 divergent transitions after warmup. See
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 to find out why this is a problem and how to eliminate them. 
-2: There were 9974 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 4. See
+2: There were 9863 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 4. See
 http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 3: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
 http://mc-stan.org/misc/warnings.html#bfmi-low 
 4: Examine the pairs() plot to diagnose sampling problems
  
-5: The largest R-hat is 1.14, indicating chains have not mixed.
+5: The largest R-hat is 1.74, indicating chains have not mixed.
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#r-hat 
 6: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
@@ -178,14 +178,14 @@ http://mc-stan.org/misc/warnings.html#tail-ess
 [4] " priors centered at truth  time period  20" 
 > 
 > to_save = list(fit, chain_info)
-> save(to_save, file = "nuts_vrettas_tf20_lam0_1") ######not 5, 3
+> save(to_save, file = "nuts_vrettas_tf20_lam0_10") ######not 5, 3
 > p1 = extract(to_save[[1]], inc_warmup = TRUE, permuted = FALSE)
 > colMeans(p1[,1,])
-     theta[1]      theta[2]      theta[3]  sigma_vec[1]  sigma_vec[2] 
-     9.519880     28.106044      2.672432      5.043472      3.508847 
- sigma_vec[3]          lp__ 
-    59.318548 -10030.470072 
+    theta[1]     theta[2]     theta[3] sigma_vec[1] sigma_vec[2] sigma_vec[3] 
+    9.860124    28.054370     2.649313     3.687353     7.312837     7.983713 
+        lp__ 
+-8410.609273 
 > 
 > proc.time()
-   user  system elapsed 
-959.624   8.343 982.121 
+    user   system  elapsed 
+ 978.718   12.687 1044.085 

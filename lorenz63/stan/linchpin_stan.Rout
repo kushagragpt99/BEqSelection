@@ -89,7 +89,7 @@ rstan_options(auto_write = TRUE)
 > Nobs = 10 # no of observations (Y) per time step
 > del_t = 0.01 # discrete approximation of dt
 > tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
-> lam_o = diag(1, 3) # prior covariance matrix of X[0]
+> lam_o = diag(10, 3) # prior covariance matrix of X[0]
 > inv.lam_o = solve(lam_o)
 > alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 > alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
@@ -134,13 +134,13 @@ rstan_options(auto_write = TRUE)
 > fit <- sampling(model, list(N = N, K = K, n_X = n.X, n_theta = n.theta, n_sigma = n.sigma, y = Y, seq_t = seq_t, inv_R = inv_R,
 +                 inv_lam_0 = inv.lam_o, tau_0 = tau_o[, 1], del_t = del_t, a1 = alpha1, a2 = alpha2, a3 = alpha3, b1 = beta1,
 +                 b2 = beta2, b3 = beta3, a4 = a4, b4 = b4), iter = n, warmup = burn_in_n, chains = 1, init = initf,
-+                 control = list(max_treedepth = 8))
++                 control = list(max_treedepth = 4))
 [1] "you shall not pass***************************************8"
 
 SAMPLING FOR MODEL 'linchpin' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.015625 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 156.25 seconds.
+Chain 1: Gradient evaluation took 0 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -157,21 +157,24 @@ Chain 1: Iteration: 16000 / 20000 [ 80%]  (Sampling)
 Chain 1: Iteration: 18000 / 20000 [ 90%]  (Sampling)
 Chain 1: Iteration: 20000 / 20000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 5078.23 seconds (Warm-up)
-Chain 1:                5123.91 seconds (Sampling)
-Chain 1:                10202.1 seconds (Total)
+Chain 1:  Elapsed Time: 313.297 seconds (Warm-up)
+Chain 1:                322.047 seconds (Sampling)
+Chain 1:                635.344 seconds (Total)
 Chain 1: 
 Warning messages:
-1: There were 10000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 8. See
+1: There were 10000 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 4. See
 http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 2: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
 http://mc-stan.org/misc/warnings.html#bfmi-low 
 3: Examine the pairs() plot to diagnose sampling problems
  
-4: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+4: The largest R-hat is 1.56, indicating chains have not mixed.
+Running the chains for more iterations may help. See
+http://mc-stan.org/misc/warnings.html#r-hat 
+5: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#bulk-ess 
-5: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+6: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 Running the chains for more iterations may help. See
 http://mc-stan.org/misc/warnings.html#tail-ess 
 > 
@@ -188,17 +191,17 @@ http://mc-stan.org/misc/warnings.html#tail-ess
 > p2 = extract(fit, inc_warmup = FALSE, permuted = FALSE)
 > p2 = p2[,1,1:(n.X+n.theta)]
 > #p2 = p2[,1,1:(n.X+n.theta)]
-> to_save = list(fit, chain_info)
-> save(to_save, file = "nuts_linchpin_lam0_1_td_8") ######not 5, 3
+> #to_save = list(fit, chain_info)
+> #save(to_save, file = "nuts_linchpin_td_4") ######not 5, 3
 > #p2 = extract(to_save[[1]], inc_warmup = TRUE)
 > #colMeans(p1[, 1,])
 > 
 > #al = c(as.numeric(X) + rnorm(n.X, sd = 0.1), colMeans(p2$theta))
-> ans2 = linchpin(n/2, init)
-> colMeans(ans2[[1]])
-[1] 10.212736 28.014704  2.657076 10.187198  3.494874 51.408339
-> #pm = ans[[1]]
-> #colMeans(pm)
+> ans = linchpin(n/2, init)
+> colMeans(ans[[1]])
+[1] 10.164862 28.032126  2.626840 17.224529  3.737007 10.339202
+> to_save = list(ans, chain_info)
+> save(to_save, file = "nuts_linchpin_td_4")
 > 
 > #p2.1 = matrix(0,nrow = 500, ncol = n.X+n.theta)
 > #for (i in 1:500) {
@@ -207,5 +210,5 @@ http://mc-stan.org/misc/warnings.html#tail-ess
 > 
 > 
 > proc.time()
-     user    system   elapsed 
-10533.905   102.109 11752.548 
+    user   system  elapsed 
+1050.202   29.296 1205.481 

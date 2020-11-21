@@ -2,7 +2,6 @@ set.seed(1)
 library(mvtnorm)
 library(mcmc)
 library(invgamma)
-library(rstan)
 
 # drifet function for Lorenz-63
 drift_fun <- function(X, theta) {
@@ -10,18 +9,63 @@ drift_fun <- function(X, theta) {
     return(t(t(ans)))
 }
 
+ludfun <- function(state) {
+    # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
+    # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
+
+    X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
+    theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
+
+
+    # all the elements of theta should be positive
+    #if (min(theta) <= 0)
+        #return(-Inf)
+
+    # Extracting observed data
+    X_t = X_n[, seq(2, N + 1, N / K)]
+
+
+    # pi is the log of likelihood
+    # This doesn't need a loop
+    p1 = 0
+    #print(dim(Y))
+    for (k in 1:K) {
+        Y.t = t(t(Y[, k]))
+        X_t.t = t(t(X_t[, k]))
+        p1 = p1 + t(Y.t - X_t.t) %*% inv_R %*% (Y.t - X_t.t)
+    }
+    p1 = -0.5 * p1
+    p1 = p1 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o)
+
+    #######################################################################
+    #p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))
+    #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
+    ######################################################################
+
+    #p2 = (alpha1 - 1) * log(theta[1]) - theta[1] / beta1 + (alpha2 - 1) * log(theta[2]) - theta[2] / beta2 + (alpha3 - 1) * log(theta[3]) - theta[3] / beta3
+    p2 = dnorm(theta[1], a1, b1, log = TRUE) + dnorm(theta[2], a2, b2, log = TRUE) + dnorm(theta[3], a3, b3, log = TRUE)
+
+    f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, theta)
+    del_X = t(diff(t(X_n)))
+    beta_tmp = rowSums((del_X / del_t - f[, - (N + 1)]) ^ 2) * del_t / 2
+    p3 =  - (a4 + N / 2) * sum(log(b4 + beta_tmp))
+
+    return(p1 + p2 + p3)
+
+}
+
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = 6)
     scale = rep(0.001, n.X + n.theta)
-    scale[(n.X + 1):(n.X + n.theta)] = 0.08
+    scale[(n.X + 1):(n.X + n.theta)] = 0.15
     accept.prob = 0
 
     for (i in 1:n) {
-        #chain = metrop(ludfun, init, 1, scale = scale)
-        #state = chain$batch
-        #accept.prob = accept.prob + chain$accept
-        state = p2[i,]
+        if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
+        chain = metrop(ludfun, init, 1, scale = scale)
+        state = chain$batch
+        accept.prob = accept.prob + chain$accept
         X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
         theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta 
         X_avg = X_avg + state[1:n.X]
@@ -36,10 +80,10 @@ linchpin <- function(n, init) {
         Sigma[3] = rinvgamma(1, shape = N / 2 + a4, rate = b4 + beta_tmp[3])
 
         param_mat[i, 4:6] = Sigma
-        #init = state
+        init = state
     }
 
-    #print(accept.prob / n)
+    print(accept.prob / n)
     X_avg = X_avg / n
     final_output = list(param_mat, X_avg)
     return(final_output)
@@ -65,13 +109,13 @@ del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
 lam_o = diag(10, 3) # prior covariance matrix of X[0]
 inv.lam_o = solve(lam_o)
-alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
-alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
-alpha3 = 6 # Prior for \beta is Gamma (alpha3, beta3)
-beta1 = 0.5 
-beta2 = 0.5 
-beta3 = 0.5 
-a4 = 2 
+a1 = 0
+a2 = 0
+a3 = 0
+a4 = 2
+b1 = 10
+b2 = 10
+b3 = 10
 b4 = 6
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
@@ -83,55 +127,17 @@ n.X = 3 * (N + 1)
 n.theta = 3
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
-seq_t = seq(2, N + 1, N / K)
-n = 2e4
-burn_in_n = n/2
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
 load('../burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
-init[(1:n.X)] <- X #as.numeric(X) + rnorm(n.X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, c(10, 28, 8 / 3), sigma = diag(3, 3)) # random initial values for MCMC
+init[(1:n.X)] <- as.numeric(X) #+ rnorm(n.X) #runif(n.param, 0, 5)
+init[(n.X + 1):(n.X + n.theta)] <- rnorm(3,sd = 4) #rmvnorm(1, c(10, 28, 8 / 3), sigma = diag(0.5, 3)) # random initial values for MCMC
 
-initf <- function() {
-    print('you shall not pass***************************************8')
-    return(list(X = init[(1:n.X)], theta = init[(n.X + 1):(n.X + n.theta)]))
-}
-#initf <- function() {
-    #print('you shall not pass***************************************8')
-    #return(list(X_n = matrix(init[(1:n.X)],nrow = 3), theta = init[(n.X + 1):(n.X + n.theta)]))
-#}
-model = stan_model('linchpin.stan')
-
-fit <- sampling(model, list(N = N, K = K, n_X = n.X, n_theta = n.theta, n_sigma = n.sigma, y = Y, seq_t = seq_t, inv_R = inv_R,
-                inv_lam_0 = inv.lam_o, tau_0 = tau_o[, 1], del_t = del_t, a1 = alpha1, a2 = alpha2, a3 = alpha3, b1 = beta1,
-                b2 = beta2, b3 = beta3, a4 = a4, b4 = b4), iter = n, warmup = burn_in_n, chains = 1, init = initf,
-                control = list(max_treedepth = 4))
-
-chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-                 "max tree depth is ", 4, " \n starting from init ", "\n priors centered at truth",
-                 " time period ", tf))
-
-print(chain_info)
-
-p2 = extract(fit, inc_warmup = FALSE, permuted = FALSE)
-p2 = p2[,1,1:(n.X+n.theta)]
-#p2 = p2[,1,1:(n.X+n.theta)]
-#to_save = list(fit, chain_info)
-#save(to_save, file = "nuts_linchpin_td_4") ######not 5, 3
-#p2 = extract(to_save[[1]], inc_warmup = TRUE)
-#colMeans(p1[, 1,])
-
-#al = c(as.numeric(X) + rnorm(n.X, sd = 0.1), colMeans(p2$theta))
-ans = linchpin(n/2, init)
-colMeans(ans[[1]])
-to_save = list(ans, chain_info)
-save(to_save, file = "nuts_linchpin_td_4")
-
-#p2.1 = matrix(0,nrow = 500, ncol = n.X+n.theta)
-#for (i in 1:500) {
-    #p2.1[i,] = c(as.numeric(al[i,,]),10,28,3)
-#}
-
+ans = linchpin(1e4, init)
+pm = ans[[1]]
+colMeans(pm)
+#plot.ts(pm)
+save(ans, file = "l63_linch_1e4_sensitivity_a")
