@@ -26,10 +26,22 @@ drift_fun_true <- function(X, theta) {
 ludfun <- function(state, gamma) {
     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
+    #if (index == 0) {
+        ##print('0')
+        #all[1:n.X] = state
+    #} else {
+        ##print(index)
+        #all[n.X+index] = state
+    #}
+
+    #X_n = matrix(all[1:n.X], nrow = 3, ncol = N + 1)
+    #B_vec = all[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
+    #B_mat = matrix(B_vec, nrow = 3)
 
     X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
     B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
     B_mat = matrix(B_vec, nrow = 3)
+
     # all the elements of theta should be positive
     #if (min(theta) <= 0)
     #return(-Inf)
@@ -77,27 +89,102 @@ sample_gamma <- function(B_vec) {
     return(gamma)
 }
 
+MH.X <- function(init, n, scale, gamma, B_vec) {
+    chain = matrix(, nrow = n, ncol = n.X)
+    accept.prob = 0
+    for (i in 1:n) {
+        prop = sapply(init, function(t) rnorm(1, t, scale))
+        prop_ludf = c(prop, B_vec)
+        init_ludf = c(init, B_vec)
+        if ( log(runif(1)) < (ludfun(prop_ludf, gamma) - ludfun(init_ludf, gamma)) ) {
+            init = prop
+            accept.prob = accept.prob+1
+        }
+        chain[i,] = init
+    }
+    ans = list(chain, accept.prob / n)
+    return(ans)
+}
+
+MH.B <- function(index, init, n, scale, gamma, state) {
+    chain = numeric(length = n)
+    accept.prob = 0
+    prop_ludf = state
+    init_ludf = state
+    for (i in 1:n) {
+        prop = rnorm(1, init, scale)
+        prop_ludf[n.X + index] = prop
+        init_ludf[n.X + index] = init
+        if ( log(runif(1)) < (ludfun(prop_ludf, gamma) - ludfun(init_ludf, gamma)) ) {
+            init = prop
+            accept.prob = accept.prob + 1
+        }
+        chain[i] = init
+    }
+    ans = list(chain, accept.prob / n)
+    return(ans)
+}
+
 linchpin <- function(n, init, scale_vec) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = 2*n.theta + n.sigma)
-    scale = rep(0.0005 * 1, n.X + n.theta)
+    scale = rep(0.0001 * 1, n.X + n.theta)
     scale[(n.X + 1):(n.X + n.theta)] = 0.001
     scale[n.X + non_zero] = .4 * scale_vec[non_zero]
-    scale[n.X + param_i] = 1.2 * scale_vec[param_i]
-    scale[n.X + param_i[c(5)]] = 1.8 * scale_vec[param_i[c(5)]]
-    scale[n.X + param_i[c(2)]] = 10 * scale_vec[param_i[c(2)]]
+    scale[n.X + param_i] = 1 * scale_vec[param_i]
+    scale[n.X + non_zero[c(5)]] = 1.4 * scale_vec[non_zero[c(5)]]
+    scale[n.X + non_zero[c(4)]] = 1.5 * scale_vec[non_zero[c(4)]]
+    scale[n.X + param_i[c(2)]] = 2 * scale_vec[param_i[c(2)]]
+    #scale[n.X + c(3, 6)] = 0.001 * 5
+    #scale[n.X + c(1,3,4,6,7,8,10,11,12,13,14,] = 10 * scale[n.X + 1]
+    scale[(n.X + 1):(n.X + n.theta)] = scale_vec
+    scale[n.X + c(6, 25)] = 0.8 * scale[n.X + c(6, 25)]
+    scale[n.X + c(7, 8, 13, 14, 15, 17, 22, 23, 24, 28, 29, 30, 31, 32, 33)] = 0.5 * scale[n.X + c(7, 8, 13, 14, 15, 17, 22, 23, 24, 28, 29, 30, 31, 32, 33)]
+    scale[n.X + c(9, 10, 11, 12, 16, 18, 19, 20, 21)] = 0.2 * scale[n.X + c(9, 10, 11, 12, 16, 18, 19, 20, 21)]
+    scale[n.X + c(3, 4, 8,10, 11, 12, 16, 19, 20, 21, 22, 23, 24, 28, 30, 31, 32, 33)] = 1.5 * scale[n.X + c(3, 4, 8, 10, 11, 12, 16, 19, 20, 21, 22, 23, 24, 28, 30, 31, 32, 33)]
+    scale[n.X + c(17, 20, 21, 24)] = 0.8 * scale[n.X + c(17,20,21, 24)]
+    scale[n.X + c(3, 9, 16, 33)] = 1.3 * scale[n.X + c(3, 9, 16, 33)]
 
-    accept.prob = 0
+    scale.X = 0.0001
+    scale.B = scale[(n.X + 1):(n.X + n.theta)]
+    
+    accept.prob = numeric(1 + n.theta)
+    state = init
 
     for (i in 1:n) {
         gamma = sample_gamma(init[(n.X + 1):(n.X + n.theta)])
         param_mat[i, (n.theta + n.sigma + 1):(2 * n.theta + n.sigma)] = gamma
 
-        if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
+        if (i %% (n / 5) == 0) {
+            print(i)
+            print(matrix(accept.prob[2:(n.theta+1)]/i, nrow = 3))
+            #print(c(i, accept.prob / i))
+        }
 
-        chain = metrop(ludfun, init, 1, scale = scale, gamma = gamma)
-        state = chain$batch
-        accept.prob = accept.prob + chain$accept
+        #all = init
+        #chain = metrop(ludfun, initial = init[1:n.X], nbatch = 1, scale = scale.X, gamma = gamma, all = all, index = 0)
+        #accept.prob[1] = accept.prob[1] + chain$accept
+        #init[1:n.X] = chain$batch
+
+        ans = MH.X(init[1:n.X], 1, scale.X, gamma, init[(n.X + 1):(n.X + n.theta)])
+        accept.prob[1] = accept.prob[1] + ans[[2]]
+        init[1:n.X] = ans[[1]]
+
+        for (j in 1:n.theta) {
+            #all = init
+            #chain = metrop(ludfun, initial = init[n.X + j], nbatch = 1, scale = scale.B[j], gamma = gamma, all = all, index = j)
+            #accept.prob[j + 1] = accept.prob[j + 1] + chain$accept
+            #init[n.X + j] = chain$batch
+
+            ans = MH.B(j, init[n.X + j], 1, scale.B[j], gamma, state)
+            accept.prob[j + 1] = accept.prob[j + 1] + ans[[2]]
+            init[n.X+j] = ans[[1]]
+        }
+        state = init
+        #chain = metrop(ludfun, init, 1, scale = scale, gamma = gamma)
+        #state = chain$batch
+        #accept.prob = accept.prob + chain$accept
+        
         X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
         theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta 
         X_avg = X_avg + state[1:n.X]
@@ -154,7 +241,7 @@ tau0 = 0.5
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
 N = (tf - to) / del_t # no of discretizations of the Lorenz-63, i.e. size of X
 burn_in = 5000 / del_t
-R = diag(2, 3) # observational error
+R = diag(1/2, 3) # observational error
 inv_R = solve(R)
 mu = 0
 sigma2 = 10
@@ -178,6 +265,7 @@ non_zero = c(4, 5, 7, 8, 12, 24, 29) - 3
 param_i = c(1, 2, 4, 9)
 load("../../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
+init[n.X+5] = -0.8
 
 sigma_Y = mean(diag(var(t(Y))))
 tau0 = sqrt(sigma_Y / (10 * K))
@@ -185,7 +273,7 @@ tau1 = sqrt(sigma_Y * max((n.theta^2.1)/(100*K), log(K)))
 
 load('../l63_linch_T_20_5e5_1')
 var1 = cov(to_save[[1]][[1]][, 1:33])
-scale_vec = 0.04 * sqrt(diag(var1))
+scale_vec = 3 * sqrt(diag(var1))
 ans = linchpin(n, init, scale_vec)
 #plot.ts(ans[[1]][, param_i])
 #plot.ts(ans[[1]][, non_zero])
@@ -194,7 +282,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting fr
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "l63_linch_T_20_1e4_1_spikes")
+save(to_save, file = "l63_linch_T_20_cwise_1_spikes")
 pm = ans[[1]][,1:(n.sigma+n.theta)]
 
 print(matrix(colMeans(pm), nrow = 3))
