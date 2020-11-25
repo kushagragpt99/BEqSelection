@@ -80,6 +80,63 @@ ludfun <- function(state, gamma) {
 
 }
 
+ludfun.X <- function(state, gamma, all) {
+    # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
+    # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
+    #if (index == 0) {
+    ##print('0')
+    #all[1:n.X] = state
+    #} else {
+    ##print(index)
+    #all[n.X+index] = state
+    #}
+    all[1:n.X] = state
+    X_n = matrix(all[1:n.X], nrow = 3, ncol = N + 1)
+    B_vec = all[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
+    B_mat = matrix(B_vec, nrow = 3)
+
+    #X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
+    #B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
+    #B_mat = matrix(B_vec, nrow = 3)
+
+    # all the elements of theta should be positive
+    #if (min(theta) <= 0)
+    #return(-Inf)
+
+    # Extracting observed data
+    X_t = X_n[, seq(2, N + 1, N / K)]
+
+
+    # pi is the log of likelihood
+    # This doesn't need a loop
+    p1 = 0
+    #print(dim(Y))
+    for (k in 1:K) {
+        Y.t = t(t(Y[, k]))
+        X_t.t = t(t(X_t[, k]))
+        p1 = p1 + t(Y.t - X_t.t) %*% inv_R %*% (Y.t - X_t.t)
+    }
+    p1 = -0.5 * p1
+    p1 = p1 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o)
+
+    #######################################################################
+    #p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))
+    #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
+    ######################################################################
+    B_cov_gamma = gamma * (tau1 ^ 2) + (1 - gamma) * (tau0 ^ 2)
+    p2 = dmvnorm(B_vec, sigma = diag(B_cov_gamma), log = TRUE)
+    #p2 = (-1 / 2) * sum((B_vec - mu) ^ 2) / sigma2
+
+    f = mapply(drift_fun, X = split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), t = del_t * (0:N), MoreArgs = list(B_vec))
+    #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, B_vec, list(1,2))
+    del_X = t(diff(t(X_n)))
+    beta_tmp = rowSums((del_X / del_t - f[, - (N + 1)]) ^ 2) * del_t / 2
+    p3 = -(a4 + N / 2) * sum(log(b4 + beta_tmp))
+
+    return(p1 + p2 + p3)
+
+}
+
 sample_gamma <- function(B_vec) {
     gamma = numeric(length = n.theta)
     for (i in 1:n.theta) {
@@ -161,14 +218,14 @@ linchpin <- function(n, init, scale_vec) {
             #print(c(i, accept.prob / i))
         }
 
-        #all = init
-        #chain = metrop(ludfun, initial = init[1:n.X], nbatch = 1, scale = scale.X, gamma = gamma, all = all, index = 0)
-        #accept.prob[1] = accept.prob[1] + chain$accept
-        #init[1:n.X] = chain$batch
+        all = init
+        chain = metrop(ludfun.X, initial = init[1:n.X], nbatch = 1, scale = scale.X, gamma = gamma, all = all)
+        accept.prob[1] = accept.prob[1] + chain$accept
+        init[1:n.X] = chain$batch
 
-        ans = MH.X(init[1:n.X], 1, scale.X, gamma, init[(n.X + 1):(n.X + n.theta)])
-        accept.prob[1] = accept.prob[1] + ans[[2]]
-        init[1:n.X] = ans[[1]]
+        #ans = MH.X(init[1:n.X], 1, scale.X, gamma, init[(n.X + 1):(n.X + n.theta)])
+        #accept.prob[1] = accept.prob[1] + ans[[2]]
+        #init[1:n.X] = ans[[1]]
 
         for (j in 1:n.theta) {
             #all = init
@@ -203,7 +260,7 @@ linchpin <- function(n, init, scale_vec) {
     }
     print(accept.prob / n)
     X_avg = X_avg / n
-    final_output = list(param_mat, X_avg)
+    final_output = list(param_mat, X_avg, accept.prob/n)
     return(final_output)
 }
 
@@ -251,7 +308,7 @@ n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 q = rep(0.5,n.theta) #runif(n.theta)
-n <- 1e4
+n <- 5e1
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -282,7 +339,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting fr
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "l63_linch_T_20_cwise_1_spikes")
+#save(to_save, file = "l63_linch_T_20_cwise_1_spikes")
 pm = ans[[1]][,1:(n.sigma+n.theta)]
 
 print(matrix(colMeans(pm), nrow = 3))
