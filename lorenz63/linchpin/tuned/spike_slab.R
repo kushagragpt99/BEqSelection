@@ -308,7 +308,7 @@ n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 q = rep(0.5,n.theta) #runif(n.theta)
-n <- 5e1
+n <- 1e4
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -322,7 +322,10 @@ non_zero = c(4, 5, 7, 8, 12, 24, 29) - 3
 param_i = c(1, 2, 4, 9)
 load("../../l63_linch_reg_bsv_0001_T_20_pv_10_init")
 init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
-init[n.X+5] = -0.8
+init[n.X + 5] = -0.8
+
+load('l63_linch_T_20_cwise_1_spikes')
+init[(n.X+1):(n.X+n.theta)] = colMeans(to_save[[1]][[1]][9e3:1e4,1:33])
 
 sigma_Y = mean(diag(var(t(Y))))
 tau0 = sqrt(sigma_Y / (10 * K))
@@ -339,7 +342,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting fr
 
 print(chain_info)
 to_save = list(ans, chain_info)
-#save(to_save, file = "l63_linch_T_20_cwise_1_spikes")
+save(to_save, file = "l63_linch_T_20_1e4_cwise_1_spikes")
 pm = ans[[1]][,1:(n.sigma+n.theta)]
 
 print(matrix(colMeans(pm), nrow = 3))
