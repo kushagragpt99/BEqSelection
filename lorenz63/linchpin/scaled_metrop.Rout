@@ -61,13 +61,13 @@ The following objects are masked from ‘package:Matrix’:
 + }
 > 
 > make_tilde <- function(X, t) {
-+     X_vec = c(1, X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
++     X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
 +     return(X_vec)
 + }
 > # drifet function for Lorenz-63
 > drift_fun <- function(X, t, B) {
 +     #print(make_tilde(X,t))
-+     tildeX = matrix(make_tilde(X, t), nrow = 12, ncol = 1)
++     tildeX = matrix(make_tilde(X, t), nrow = 11, ncol = 1)
 +     B_mat = matrix(B, nrow = 3)
 +     #print(B)
 +     #print(dim(tildeX))
@@ -210,13 +210,13 @@ The following objects are masked from ‘package:Matrix’:
 > inv_R = solve(R)
 > mu = 0
 > sigma2 = 10
-> mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
+> mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 > n.X = 3 * (N + 1)
-> n.theta = 36
+> n.theta = 33
 > n.sigma = 3
 > n.param = n.X + n.theta + n.sigma
 > scale_iter = 1e4
-> n = 5e4
+> n = 1e5
 > 
 > #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 > #X = X_total[, (burn_in):(N + burn_in)]
@@ -228,7 +228,7 @@ The following objects are masked from ‘package:Matrix’:
 > init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
 > non_zero = c(4, 5, 7, 8, 12, 24, 29)
 > load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
-> init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
+> init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
 > 
 > scale = rep(0.0005, n.X + n.theta)
 > scale[(n.X + 1):(n.X + n.theta)] = 0.001
@@ -256,8 +256,8 @@ The following objects are masked from ‘package:Matrix’:
 > ##}
 > 
 > #scale_tuned = h * sqrt_cov_mat
-> #save(scale_tuned, file = "scaled_tune")
-> load('scaled_tune')
+> #save(scale_tuned, file = "scaled_tune_no_int_h")
+> load('scaled_tune_no_int')
 > scale_tuned_mod = Mod(scale_tuned)
 > print("covariance matrix created")
 [1] "covariance matrix created"
@@ -266,20 +266,30 @@ The following objects are masked from ‘package:Matrix’:
 +                  "tuning in scale is ", h, " \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
 +                  20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)))
 > ans = linchpin(n, init, scale_tuned_mod)
-[1] 5000.0000    0.2894
-[1] 1.000e+04 2.895e-01
-[1] 1.500e+04 2.874e-01
-[1] 2.0000e+04 2.8945e-01
-[1] 2.5000e+04 2.8828e-01
-[1] 3.00e+04 2.87e-01
-[1] 3.500000e+04 2.859143e-01
-[1] 4.0000e+04 2.8695e-01
-[1] 4.500000e+04 2.870667e-01
-[1] 5.0000e+04 2.8506e-01
-[1] 0.28506
+[1] 5000.0000    0.3032
+[1] 1.000e+04 3.075e-01
+[1] 1.500000e+04 3.033333e-01
+[1] 2.000e+04 3.034e-01
+[1] 2.5000e+04 3.0272e-01
+[1] 3.000000e+04 3.030667e-01
+[1] 3.500000e+04 3.015714e-01
+[1] 4.0000e+04 3.0245e-01
+[1] 4.500000e+04 3.028889e-01
+[1] 5.0000e+04 3.0152e-01
+[1] 5.500e+04 3.014e-01
+[1] 6.000000e+04 3.017167e-01
+[1] 6.500000e+04 3.014154e-01
+[1] 7.000e+04 3.018e-01
+[1] 7.500e+04 3.024e-01
+[1] 8.000000e+04 3.021625e-01
+[1] 8.500000e+04 3.020118e-01
+[1] 9.000000e+04 3.018778e-01
+[1] 9.500000e+04 3.022316e-01
+[1] 1.000e+05 3.019e-01
+[1] 0.3019
 > 
 > to_save = list(ans, chain_info)
-> save(to_save, file = "scaled_metrop")
+> save(to_save, file = "scaled_metrop_no_int")
 > #chain_info = paste(c("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter,
 >                  #" \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
 >                  #20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)), collapse = " ")
@@ -296,4 +306,4 @@ The following objects are masked from ‘package:Matrix’:
 > 
 > proc.time()
     user   system  elapsed 
-19115.23 14770.91 35481.74 
+36068.39 27566.87 64383.16 

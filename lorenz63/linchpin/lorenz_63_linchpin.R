@@ -62,6 +62,7 @@ linchpin <- function(n, init) {
     accept.prob = 0
 
     for (i in 1:n) {
+        if(i %% (n/10) == 0)    print(c(i, accept.prob/i))
         chain = metrop(ludfun, init, 1, scale = scale)
         state = chain$batch
         accept.prob = accept.prob + chain$accept
@@ -111,10 +112,10 @@ inv.lam_o = solve(lam_o)
 alpha1 = 20 # Prior for \sigma is Gamma (alpha1, beta1)
 alpha2 = 56 # Prior for \rho is Gamma (alpha2, beta2)
 alpha3 = 6 # Prior for \beta is Gamma (alpha3, beta3)
-beta1 = 0.5*2
-beta2 = 0.5*2
-beta3 = 0.5*2
-a4 = 2*2
+beta1 = 0.5
+beta2 = 0.5
+beta3 = 0.5
+a4 = 2
 b4 = 6
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
@@ -129,17 +130,17 @@ n.param = n.X + n.theta + n.sigma
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
-load('burninX')
+load('../burninX')
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
-init[(1:n.X)] <- as.numeric(X) + rnorm(n.X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(10, 28, 8 / 3), sigma = diag(3,3)) # random initial values for MCMC
+init[(1:n.X)] <- as.numeric(X) #+ rnorm(n.X) #runif(n.param, 0, 5)
+init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1,c(10, 28, 8 / 3), sigma = diag(0.5,3)) # random initial values for MCMC
 
-ans = linchpin(1e4, init)
+ans = linchpin(5e4, init)
 pm = ans[[1]]
 colMeans(pm)
-plot.ts(pm)
-#save(ans, file = "l63_linch_burnin_1e7")
+#plot.ts(pm)
+save(ans, file = "l63_linch_1e4")
 
 #save(X, file = 'burninX')
 #load('l63_linch_burnin')

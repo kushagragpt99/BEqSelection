@@ -85,7 +85,7 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
 # hyper-parameters
 to = 0 # initial time
 tf = 20 # final time
-Nobs = 50 # no of observations (Y) per time step
+Nobs = 10 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
 lam_o = diag(1, 3) # prior covariance matrix of X[0]
@@ -105,7 +105,7 @@ burn_in = 5000 / del_t
 R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
-sigma2 = 1e0
+sigma2 = 1e2
 mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 #mu = matrix(mu_truth, nrow = 3)
 mu = rep(0, 33)
@@ -114,8 +114,10 @@ n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 seq_t = seq(2, N + 1, N / K)
-n = 1e4
-burn_in_n = 2e3
+n = 1e4*5
+burn_in_n = 1e4
+
+Sys.setenv(TMPDIR = "/mnt/c/Users/glaedur/OneDrive/Documents/Python_Scripts/Bayesian_inference_computer_models/lorenz63/stan/check_stan")
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -136,35 +138,37 @@ named_list2 = list(Xn = X, B = matrix(init[(n.X + 1):(n.X + n.theta)], nrow = 3)
 #initial = list(named_list1, named_list2)
 initial = list(named_list2)
 options(mc.cores = 2)
-load('hmcinit')
-p6 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
+load('hmcinitT2')
+#p6 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
 initf <- function() {
     print('you shall not pass***************************************8')
-    return(list(X = as.numeric(X), B_vec = hmcinit ))
+    return(list(X = as.numeric(X), B_vec = hmcinitT2 ))
 }
 
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n using warmup ", burn_in_n,
-                 "max tree depth is ", 5, " \n starting from ..._init ", "\n priors centered at truth truth ", 
-                 " variance ", sigma2, " lam_0 is ", lam_o[1,1], " time period ",20, " Nobs ", Nobs, "\n no intercept model"))
+                 "max tree depth is ", 5, " \n starting from ..._init ", "\n priors centered at 0 ", 
+                 " variance ", sigma2, " lam_0 is ", lam_o[1,1], " time period ",tf, " Nobs ", Nobs, "\n no intercept model"))
 
                 
 print(chain_info)
+tempdir(check = TRUE)
 fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[,1], 
-                            mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
+                            mu = mu, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
                             chains = 1, init = initf, control = list(max_treedepth = 5), pars = c("B_vec"))
+                            #sample_file = 'staninfo.csv', diagnostic_file = 'standiag.txt', verbose = TRUE)
 
 #fit2 <- sampling(model, list(N = N, K = K, y = Y, seq_t = seq_t, tau_0 = tau_o[, 1],
                             #mu = mu_truth, sigma2 = sigma2, del_t = del_t, a4 = a4, b4 = b4, inv_R = inv_R,
                             #inv_lam_0 = inv.lam_o, n_X = n.X, n_theta = n.theta), iter = n, warmup = burn_in_n,
                             #chains = 1, init = initf, algorithm = "HMC", control = list(stepsize = 0.04, int_time = 0.4),
-                            #pars = c("B_vec"))
+                            #pars = c("B_vec"), verbose = TRUE)
 
 
 #p2 = p1[, 1, (n.X + 1):(n.param - 3)]
 
 to_save = list(fit2, chain_info)
-save(to_save, file = "hmc_td_5_noInt_nuts_nobs50_lam0_1_sigma_1_mutruth")
+save(to_save, file = "nuts_td_5_noInt_sigma2_100_lam0_1_mu")
 p23 = extract(to_save[[1]], inc_warmup = FALSE, permuted = FALSE)
 matrix(colMeans(p23[, 1, 1:33]), nrow = 3)
 

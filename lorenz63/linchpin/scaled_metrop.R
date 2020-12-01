@@ -14,13 +14,13 @@ adjust_matrix <- function(mat, N, epsilon = sqrt(log(N) / dim(mat)[2]), b = 9 / 
 }
 
 make_tilde <- function(X, t) {
-    X_vec = c(1, X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
+    X_vec = c(X[1], X[2], X[3], X[1] ^ 2, X[2] ^ 2, X[3] ^ 2, X[1] * X[2], X[2] * X[3], X[3] * X[1], t, t ^ 2)
     return(X_vec)
 }
 # drifet function for Lorenz-63
 drift_fun <- function(X, t, B) {
     #print(make_tilde(X,t))
-    tildeX = matrix(make_tilde(X, t), nrow = 12, ncol = 1)
+    tildeX = matrix(make_tilde(X, t), nrow = 11, ncol = 1)
     B_mat = matrix(B, nrow = 3)
     #print(B)
     #print(dim(tildeX))
@@ -38,7 +38,7 @@ ludfun <- function(state) {
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
 
     X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
-    B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
+    B_vec = state[(n.X + 1):(n.X + n.theta)]  
     B_mat = matrix(B_vec, nrow = 3)
 
     # all the elements of theta should be positive
@@ -163,13 +163,13 @@ R = diag(2, 3) # observational error
 inv_R = solve(R)
 mu = 0
 sigma2 = 10
-mu_truth = c(rep(0, 3), -10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
+mu_truth = c(-10, 28, 0, 10, -1, rep(0, 3), -8 / 3, rep(0, 11), 1, rep(0, 4), -1, rep(0, 7))
 n.X = 3 * (N + 1)
-n.theta = 36
+n.theta = 33
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 scale_iter = 1e4
-n = 5e4
+n = 1e5
 
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -181,7 +181,7 @@ init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
 non_zero = c(4, 5, 7, 8, 12, 24, 29)
 load("../l63_linch_reg_bsv_0001_T_20_pv_10_init")
-init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1,], -3)
+init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
 
 scale = rep(0.0005, n.X + n.theta)
 scale[(n.X + 1):(n.X + n.theta)] = 0.001
@@ -209,8 +209,8 @@ h = 0.1
 ##}
 
 #scale_tuned = h * sqrt_cov_mat
-#save(scale_tuned, file = "scaled_tune")
-load('scaled_tune')
+#save(scale_tuned, file = "scaled_tune_no_int_h")
+load('scaled_tune_no_int')
 scale_tuned_mod = Mod(scale_tuned)
 print("covariance matrix created")
 #scaled_samples = metrop(ludfun, init, n, scale = cov_mat)
@@ -220,7 +220,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n using Mod o
 ans = linchpin(n, init, scale_tuned_mod)
 
 to_save = list(ans, chain_info)
-save(to_save, file = "scaled_metrop")
+#save(to_save, file = "scaled_metrop_no_int")
 #chain_info = paste(c("no of samples from MC is ", n, " \n using scaled cov matrix from MC of length ", scale_iter,
                  #" \n starting from ..._init ", "\n priors centered at ", mu, " variance ", sigma2, " time period ",
                  #20, "\n scale is ", scale[1], "\n", matrix(scale[(n.X + 1):(n.X + n.theta)], nrow = 3)), collapse = " ")

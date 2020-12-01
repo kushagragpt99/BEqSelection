@@ -117,15 +117,15 @@ init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 init[(n.X + 1):(n.X + n.theta)] <- c(10, 28, 8 / 3) # random initial values for MCMC
 init[(n.X + n.theta + 1):(n.param)] = 6                                      # inital \Sigma should also be positive semi definite
 
-scale <- rep(.003, n.param)
+scale <- rep(.001, n.param)
 scale[(n.X +  1):(n.X + n.theta)] <- .05
 scale[(n.X + n.theta + 1):(n.param)] <- .2
 #scale[c(6007, 6010, 6012)] <- 100
-chain = metrop(ludfun, init, nbatch = 1e4, scale = scale) # running MH
+chain = metrop(ludfun, init, nbatch = 1e5, scale = scale) # running MH
 
 chain$accept
 out <- chain$batch[, (n.X + 1):n.param]
 #plot.ts(out)
 print(colMeans(out))
 
-save(chain, file = "l63_1e4_MH.Rdata")
+save(chain, file = "l63_1e5_MH.Rdata")
