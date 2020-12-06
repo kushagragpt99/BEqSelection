@@ -297,7 +297,7 @@ n.theta = 4
 n.sigma = 1
 n.param = n.X + n.theta + n.sigma
 q = rep(0.5, n.theta) #runif(n.theta)
-n <- 1e4
+n <- 5e5
 
 X = euler_maruyama(-0.5, del_t, N, 2, 1) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -333,7 +333,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting fr
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "ou_linch_T_20_1e4_cwise_1_spikes")
+save(to_save, file = "ou_linch_T_20_5e5_cwise_1_spikes")
 pm = ans[[1]][, 1:(n.sigma + n.theta)]
 
 print(colMeans(pm))
