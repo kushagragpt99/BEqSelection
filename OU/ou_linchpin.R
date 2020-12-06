@@ -112,8 +112,8 @@ del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
 lam_o = diag(10, 3) # prior covariance matrix of X[0]
 inv.lam_o = solve(lam_o)
-alpha = 4
-beta = 0.5
+alpha = 16
+beta = 1/8
 a4 = 2
 b4 = 1
 
@@ -126,7 +126,7 @@ n.X = (N + 1)
 n.theta = 1
 n.sigma = 1
 n.param = n.X + n.theta + n.sigma
-n = 1e5
+n = 5e5
 
 X = euler_maruyama(-0.5, del_t, N , 2, 1) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
@@ -156,5 +156,5 @@ ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
 #plot.ts(pm)
-save(ans, file = "OU_linch_1e5_Nobs_init_tf")
+save(ans, file = "OU_linch_5e5_Nobs_init_tf")
 # 11:30
