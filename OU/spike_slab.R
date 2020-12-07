@@ -188,11 +188,12 @@ linchpin <- function(n, init, scale_vec) {
     param_mat = matrix(, nrow = n, ncol = 2 * n.theta + n.sigma)
     scale = rep(0.0001 * 1, n.X + n.theta)
     scale[(n.X + 1):(n.X + n.theta)] = scale_vec
-    scale[n.X+c(1)] = 0.8*scale_vec[c(1)]
-    scale[n.X + c(2)] = 18 * scale_vec[c(2)]
-    #scale[n.X + c(3)] = 4 * scale_vec[c(3)]
+    scale[n.X + c(1)] = 1.7 * scale_vec[c(1)]
+    scale[n.X + c(2)] = 1.5 * scale_vec[c(2)]
+    scale[n.X + c(3)] = 1 * scale_vec[c(3)]
+    scale[n.X + c(4)] = 1 * scale_vec[c(4)]
 
-    scale.X = 0.0025
+    scale.X = 0.0085
     scale.B = scale[(n.X + 1):(n.X + n.theta)]
 
     accept.prob = numeric(1 + n.theta)
@@ -265,7 +266,7 @@ euler_maruyama <- function(X0, del_t, N, theta, Sigma) {
 
 # hyper-parameters
 to = 0 # initial time
-tf = 20 # final time
+tf = 2 # final time
 Nobs = 50 # no of observations (Y) per time step
 del_t = 0.01 # discrete approximation of dt
 tau_o = matrix(rep(0, 3), nrow = 3, ncol = 1) # prior mean for X[0], i.e. initial state of Lorenz-63 oricess
@@ -314,7 +315,8 @@ init[(n.X+1):(n.X+n.theta)] = mu_truth
 #init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
 #init[n.X + 5] = -0.8
 
-load('OU_linch_1e6_Nobs_init')
+#load('OU_linch_1e6_Nobs_init') # tf=20
+load('OU_linch_5e5_Nobs_init_tf')
 init[1:n.X] = ans[[2]]
 init[(n.X + 1):(n.X + n.theta)] = rmvnorm(1, mean = mu_truth, sigma = diag(0.2, n.theta))
 
@@ -322,9 +324,13 @@ sigma_Y = var(Y)
 tau0 = sqrt(sigma_Y / (10 * K))
 tau1 = sqrt(sigma_Y * max((n.theta ^ 2.1) / (100 * K), log(K)))
 
-load('ou_linch_1e4_1')
-var1 = cov(to_save[[1]][[1]][, 1:n.theta])
-scale_vec = 4 * sqrt(diag(var1))
+#load('ou_linch_1e4_1')
+#var1 = cov(to_save[[1]][[1]][, 1:n.theta])
+#scale_vec = 4 * sqrt(diag(var1))
+#ans2 = linchpin(n, init, scale_vec)
+load('ou_linch_tf_1e4_1')
+var1 = cov(ans2[[1]][, 1:n.theta])
+scale_vec = 1 * sqrt(diag(var1))
 ans = linchpin(n, init, scale_vec)
 #plot.ts(ans[[1]][, param_i])
 #plot.ts(ans[[1]][, non_zero])
@@ -333,7 +339,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting fr
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "ou_linch_T_20_5e5_cwise_1_spikes")
+save(to_save, file = "ou_linch_T_2_5e5_cwise_1_spikes")
 pm = ans[[1]][, 1:(n.sigma + n.theta)]
 
 print(colMeans(pm))
