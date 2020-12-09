@@ -196,13 +196,21 @@ linchpin <- function(n, init, scale_vec) {
 
     #scale.X = 0.0025
 
-    scale[(n.X + 1):(n.X + n.theta)] = scale_vec # tf=5 Sigma = 1
-    scale[n.X + c(1)] = 5.8 * scale_vec[c(1)]
-    scale[n.X + c(2)] = 0.03 * scale_vec[c(2)]
-    scale[n.X + c(3)] = 0.08 * scale_vec[c(3)]
-    scale[n.X + c(4)] = 0.17 * scale_vec[c(4)]
+    #scale[(n.X + 1):(n.X + n.theta)] = scale_vec # tf=5 Sigma = 1
+    #scale[n.X + c(1)] = 5.8 * scale_vec[c(1)]
+    #scale[n.X + c(2)] = 0.03 * scale_vec[c(2)]
+    #scale[n.X + c(3)] = 0.08 * scale_vec[c(3)]
+    #scale[n.X + c(4)] = 0.17 * scale_vec[c(4)]
 
-    scale.X = 0.007 # 0.588612 0.436650 0.244172 0.189654 0.202868
+    #scale.X = 0.007 # 0.588612 0.436650 0.244172 0.189654 0.202868
+
+    scale[(n.X + 1):(n.X + n.theta)] = scale_vec # tf=5 Sigma = 1 interp
+    scale[n.X + c(1)] = 8.5 * scale_vec[c(1)]
+    scale[n.X + c(2)] = 0.5 * scale_vec[c(2)]
+    scale[n.X + c(3)] = 0.1 * scale_vec[c(3)]
+    scale[n.X + c(4)] = 0.24 * scale_vec[c(4)]
+
+    scale.X = 0.011 # 0.588612 0.436650 0.244172 0.189654 0.202868
 
     #scale[(n.X + 1):(n.X + n.theta)] = scale_vec # tf=20
     #scale[n.X + c(1)] = 1.7 * scale_vec[c(1)]
@@ -355,20 +363,28 @@ X = euler_maruyama(-0.5, del_t, N, 2, 1) # generating sample from Lorenz-63
 #load('../../burninX')
 Y = X[seq(2, N + 1, N / K)] + rnorm(K, sd = sqrt(R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
-init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-init[(n.X + 1):(n.X + n.theta)] = mu_truth
 
-#init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1 / 50, n.theta))
-#non_zero = 1
-#param_i = 1
-#load("../../l63_linch_reg_bsv_0001_T_20_pv_10_init")
-#init[(n.X + 1):(n.X + n.theta)] <- head(tail(ans[[1]], 1)[1, - c(1, 2, 3)], -3)
-#init[n.X + 5] = -0.8
+# STARTING FROM THE TRUTH
+#init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
+#init[(n.X + 1):(n.X + n.theta)] = mu_truth
 
-#load('OU_linch_1e6_Nobs_init') # tf=20
-#load('OU_linch_5e5_Nobs_init_tf')
-#init[1:n.X] = ans[[2]]
-#init[(n.X + 1):(n.X + n.theta)] = rmvnorm(1, mean = mu_truth, sigma = diag(0.2, n.theta))
+init[(1:n.X)] <- as.numeric(X) #+ rnorm(n.X) #runif(n.param, 0, 5)
+init[(n.X + 1):(n.X + n.theta)] <- rnorm(1, 2, sd = 0.2) #rmvnorm(1, c(10, 28, 8 / 3), sigma = diag(0.5, 3)) # random initial values for MCMC
+
+X.interp = X #matrix(-50,nrow = 3, ncol = N + 1)
+y.index = 1
+#X.interp[,1] = X[,1]
+for (i in seq(2, N + 1, N / K)) {
+    if (i == 2) {
+        X.interp[2] = Y[1]
+    } else {
+        X.interp[(i - N / K + 1):i] = seq(Y[y.index], Y[y.index + 1], (Y[y.index + 1] - Y[y.index]) * K / N)[-1]
+        y.index = y.index + 1
+    }
+
+}
+
+init[(1:n.X)] <- as.numeric(X.interp)
 
 sigma_Y = var(Y)
 tau0 = sqrt(sigma_Y / (10 * K))
@@ -389,7 +405,7 @@ chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting fr
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "ou_linch_T_5_1e5_cwise_1_spikes_truth_Sigma_1")
+save(to_save, file = "ou_linch_T_5_1e5_cwise_1_spikes_init_Sigma_1")
 pm = ans[[1]][, 1:(n.sigma + n.theta)]
 
 print(colMeans(pm))
