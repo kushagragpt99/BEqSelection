@@ -26,25 +26,11 @@ drift_fun_true <- function(X, theta) {
 ludfun <- function(state, gamma) {
     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
-    #if (index == 0) {
-    ##print('0')
-    #all[1:n.X] = state
-    #} else {
-    ##print(index)
-    #all[n.X+index] = state
-    #}
-
-    #X_n = matrix(all[1:n.X], nrow = 3, ncol = N + 1)
-    #B_vec = all[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
-    #B_mat = matrix(B_vec, nrow = 3)
 
     X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
     B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
     B_mat = matrix(B_vec, nrow = 3)
 
-    # all the elements of theta should be positive
-    #if (min(theta) <= 0)
-    #return(-Inf)
 
     # Extracting observed data
     X_t = X_n[, seq(2, N + 1, N / K)]
@@ -71,25 +57,10 @@ ludfun <- function(state, gamma) {
 ludfun.X <- function(state, gamma, all) {
     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
-    #if (index == 0) {
-    ##print('0')
-    #all[1:n.X] = state
-    #} else {
-    ##print(index)
-    #all[n.X+index] = state
-    #}
     all[1:n.X] = state
     X_n = matrix(all[1:n.X], nrow = 3, ncol = N + 1)
     B_vec = all[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
     B_mat = matrix(B_vec, nrow = 3)
-
-    #X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
-    #B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
-    #B_mat = matrix(B_vec, nrow = 3)
-
-    # all the elements of theta should be positive
-    #if (min(theta) <= 0)
-    #return(-Inf)
 
     # Extracting observed data
     X_t = X_n[, seq(2, N + 1, N / K)]
@@ -102,7 +73,6 @@ ludfun.X <- function(state, gamma, all) {
     #p2 = (-1 / 2) * sum((B_vec - mu) ^ 2) / sigma2
 
     f = mapply(drift_fun, X = split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), t = del_t * (0:N), MoreArgs = list(B_vec))
-    #f = sapply(split(X_n, rep(1:ncol(X_n), each = nrow(X_n))), drift_fun, B_vec, list(1,2))
     del_X = t(diff(t(X_n)))
     beta_tmp = rowSums((del_X / del_t - f[, - (N + 1)]) ^ 2) * del_t / 2
     p3 = -(a4 + N / 2) * sum(log(b4 + beta_tmp))
@@ -181,25 +151,12 @@ linchpin <- function(n, init, scale_vec) {
         accept.prob[1] = accept.prob[1] + chain$accept
         state[1:n.X] = chain$batch
 
-        #ans = MH.X(init[1:n.X], 1, scale.X, gamma, init[(n.X + 1):(n.X + n.theta)])
-        #accept.prob[1] = accept.prob[1] + ans[[2]]
-        #init[1:n.X] = ans[[1]]
-
         for (j in 1:n.theta) {
-            ####### are you considering updated values of B for next steps??????
-            #all = init
-            #chain = metrop(ludfun, initial = init[n.X + j], nbatch = 1, scale = scale.B[j], gamma = gamma, all = all, index = j)
-            #accept.prob[j + 1] = accept.prob[j + 1] + chain$accept
-            #init[n.X + j] = chain$batch
 
             ans = MH.B(j, init[n.X + j], 1, scale.B[j], gamma, state)
             accept.prob[j + 1] = accept.prob[j + 1] + ans[[2]]
             state[n.X + j] = ans[[1]]
         }
-
-        #chain = metrop(ludfun, init, 1, scale = scale, gamma = gamma)
-        #state = chain$batch
-        #accept.prob = accept.prob + chain$accept
 
         X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
         theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta 
@@ -251,8 +208,6 @@ beta2 = 0.5
 beta3 = 0.5
 a4 = 2
 b4 = 0.6
-#tau1 = 10/2
-#tau0 = 0.5*2
 
 tau1 = 10/2  # just trying
 tau0 = 0.5 # 0.5
@@ -287,11 +242,6 @@ init = numeric(n.X + n.theta)
 #init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
 
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth + rnorm(n.theta), sigma = diag(1 / 50, n.theta))
-load('l63_linch_T_20_1e4_cwise_1_spikes_interp_diffuse_6_by_10_scale_try')
-ans = to_save[[1]]
-pm = ans[[1]][, 1:(n.sigma + n.theta)]
-init[(n.X + 1):(n.X + n.theta)] = colMeans(pm[8e3:1e4,1:n.theta])
-
 
 X.interp = X #matrix(-50,nrow = 3, ncol = N + 1)
 y.index = 1
@@ -309,11 +259,7 @@ for (i in seq(2, N + 1, N / K)) {
 }
 
 init[(1:n.X)] <- as.numeric(X.interp)
-init[1:n.X] = ans[[2]]
 
-#sigma_Y = mean(diag(var(t(Y))))
-#tau0 = sqrt(sigma_Y / (10 * K)) 
-#tau1 = sqrt(sigma_Y * max((n.theta ^ 2.1) / (100 * K), log(K))) /2 # 2
 
 load('l63_linch_T_20_5e5_1')
 var1 = cov(to_save[[1]][[1]][, 1:33])
@@ -358,8 +304,7 @@ scale.X = 0.0032 #0.002 ##################################### tried increasing t
 
 
 ans = linchpin(n, init)
-#plot.ts(ans[[1]][, param_i])
-#plot.ts(ans[[1]][, non_zero])
+
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from previous run ", "\n priors spike slab ", " time period ",
                             tf, " lam_0 is 10"))
 
@@ -379,4 +324,3 @@ print(matrix(colMeans(pm), nrow = 3))
 pm2 = ans[[1]][, (n.sigma + n.theta + 1):(n.sigma + 2 * n.theta)]
 print(matrix(colMeans(pm2), nrow = 3))
 
-#100 minutes
