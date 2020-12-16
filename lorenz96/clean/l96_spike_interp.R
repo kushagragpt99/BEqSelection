@@ -13,8 +13,6 @@ drift_fun <- function(X, t, B) {
     #print(make_tilde(X,t))
     tildeX = matrix(make_tilde(X, t), nrow = 17, ncol = 1)
     B_mat = matrix(B, nrow = N.l96)
-    #print(B)
-    #print(dim(tildeX))
     ans = B_mat %*% tildeX
     return(ans)
 }
@@ -34,25 +32,8 @@ ludfun <- function(state, gamma) {
     X_n = matrix(state[1:n.X], nrow = N.l96, ncol = N + 1)
     B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
     B_mat = matrix(B_vec, nrow = N.l96)
-    # all the elements of theta should be positive
-    #if (min(theta) <= 0)
-    #return(-Inf)
 
-    # Extracting observed data
     X_t = X_n[, seq(2, N + 1, N / K)]
-
-
-    # pi is the log of likelihood
-    # This doesn't need a loop
-    #p1 = 0
-    ##print(dim(Y))
-    #for (k in 1:K) {
-    #Y.t = t(t(Y[, k]))
-    #X_t.t = t(t(X_t[, k]))
-    #p1 = p1 + t(Y.t - X_t.t) %*% inv_R %*% (Y.t - X_t.t)
-    #}
-    #p1 = -0.5 * p1
-    #p1 = p1 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o)
 
     #######################################################################
     p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE)))
@@ -76,41 +57,13 @@ ludfun <- function(state, gamma) {
 ludfun.X <- function(state, gamma, all) {
     # State is the vector storing the vectors of length 3*N + 12. The first 3*(N+1) terms are Xs. The next three terms are the parameters \sigma, \rho & 
     # \beta. The remaining 6 terms are the \Sigma matrix. Definition of Sigma below shows how the symmetric matrix is constructed.
-    #if (index == 0) {
-    ##print('0')
-    #all[1:n.X] = state
-    #} else {
-    ##print(index)
-    #all[n.X+index] = state
-    #}
     all[1:n.X] = state
     X_n = matrix(all[1:n.X], nrow = N.l96, ncol = N + 1)
     B_vec = all[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
     B_mat = matrix(B_vec, nrow = N.l96)
 
-    #X_n = matrix(state[1:n.X], nrow = 3, ncol = N + 1)
-    #B_vec = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta    
-    #B_mat = matrix(B_vec, nrow = 3)
-
-    # all the elements of theta should be positive
-    #if (min(theta) <= 0)
-    #return(-Inf)
-
     # Extracting observed data
     X_t = X_n[, seq(2, N + 1, N / K)]
-
-
-    # pi is the log of likelihood
-    # This doesn't need a loop
-    #p1 = 0
-    ##print(dim(Y))
-    #for (k in 1:K) {
-    #Y.t = t(t(Y[, k]))
-    #X_t.t = t(t(X_t[, k]))
-    #p1 = p1 + t(Y.t - X_t.t) %*% inv_R %*% (Y.t - X_t.t)
-    #}
-    #p1 = -0.5 * p1
-    #p1 = p1 - 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o)
 
     #######################################################################
     p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE)))
@@ -200,24 +153,13 @@ linchpin <- function(n, init) {
         accept.prob[1] = accept.prob[1] + chain$accept
         state[1:n.X] = chain$batch
 
-        #ans = MH.X(init[1:n.X], 1, scale.X, gamma, init[(n.X + 1):(n.X + n.theta)])
-        #accept.prob[1] = accept.prob[1] + ans[[2]]
-        #init[1:n.X] = ans[[1]]
 
         for (j in 1:n.theta) {
-            #all = init
-            #chain = metrop(ludfun, initial = init[n.X + j], nbatch = 1, scale = scale.B[j], gamma = gamma, all = all, index = j)
-            #accept.prob[j + 1] = accept.prob[j + 1] + chain$accept
-            #init[n.X + j] = chain$batch
-            # state = init  ################### this was not there in previous code
+
             ans = MH.B(j, init[n.X + j], 1, scale.B[j], gamma, state)
             accept.prob[j + 1] = accept.prob[j + 1] + ans[[2]]
             state[n.X + j] = ans[[1]]
         }
-        #state = init
-        #chain = metrop(ludfun, init, 1, scale = scale, gamma = gamma)
-        #state = chain$batch
-        #accept.prob = accept.prob + chain$accept
 
         X_n = matrix(state[1:n.X], nrow = N.l96, ncol = N + 1)
         theta = state[(n.X + 1):(n.X + n.theta)] # vector of \sigma, \rho and \beta 
@@ -293,16 +235,8 @@ X = X_total[, (burn_in):(N + burn_in)]
 X = X[, 1:(N + 1)]
 Y = X[, seq(2, N + 1, N / K)] + rnorm(K, sd = sqrt(R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
-# STARTING FROM THE TRUTH
-#init[(1:n.X)] <- as.numeric(X) #runif(n.param, 0, 5)
-
 
 init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth + rnorm(n.theta, sd = 1.5), sigma = diag(1 / 50, n.theta)) #rmvnorm(1, c(10, 28, 8 / 3), sigma = diag(0.5, 3)) # random initial values for MCMC
-#init[(n.X + 1):(n.X + n.theta)] <- rmvnorm(1, mu_truth, sigma = diag(1/5 , n.theta))
-#load('l96_1e4_cwise_spikes_interp_diffuse_init_theta_try')
-#ans = to_save[[1]]
-#pm = ans[[1]][, 1:(n.sigma + n.theta)]
-#init[(n.X + 1):(n.X + n.theta)] = colMeans(pm[8e3:1e4, 1:n.theta])
 
 
 X.interp = X #matrix(-50,nrow = 3, ncol = N + 1)
@@ -321,7 +255,7 @@ for (i in seq(2, N + 1, N / K)) {
 }
 
 init[(1:n.X)] <- as.numeric(X.interp)
-init[1:n.X] = ans[[2]]
+
 
 sigma_Y = mean(diag(var(t(Y))))
 tau0 = sqrt(sigma_Y / (10 * K)) * 2
@@ -358,11 +292,9 @@ scale[ c(22, 37, 38, 41, 45, 46, 47, 48, 49, 50, 54, 56, 58, 59, 60, 61)] = 1.5 
 scale[ c(11, 15, 39, 53, 66, 68)] = 0.8 * scale_vec[c(11, 15, 39, 53, 66, 68)]
 
 scale.X = 0.0012
-#ans2 = linchpin(n, init, rep(.2,n.theta))
 
 ans = linchpin(n, init)
-#plot.ts(ans[[1]][, param_i])
-#plot.ts(ans[[1]][, non_zero])
+
 chain_info = capture.output(cat("no of samples from MC is ", n, " \n starting from previous run ", "\n priors spike slab ", " time period ",
                                 tf, " Sigma is .5"))
 
