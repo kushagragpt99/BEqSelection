@@ -37,8 +37,8 @@ ludfun <- function(state) {
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.0022, n.X + n.theta) # 0.003
-    scale[(n.X + 1):(n.X + n.theta)] = 0.38 # 0.5
+    scale = rep(0.0012, n.X + n.theta) # 0.003
+    scale[(n.X + 1):(n.X + n.theta)] = 0.27 # 0.5
     accept.prob = 0
 
     for (i in 1:n) {
@@ -103,7 +103,7 @@ n.X = attr$n.X
 n.theta = 1
 n.sigma = attr$n.sigma
 n.param = attr$n.param
-n = 1e6
+n = 1e4
 
 alpha = mean(colMeans(to_save[[1]][[1]][5e3:1e4, 1:N.l96]))
 
@@ -120,5 +120,5 @@ init[(n.X + 1):(n.X + n.theta)] = alpha
 ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
-#plot.ts(pm)
-save(ans, file = "l96_linch_1e6")
+plot.ts(pm)
+#save(ans, file = "l96_linch_1e6")
