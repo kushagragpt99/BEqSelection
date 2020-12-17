@@ -103,7 +103,7 @@ n.X = attr$n.X
 n.theta = 1
 n.sigma = attr$n.sigma
 n.param = attr$n.param
-n = 1e4
+n = 1e6
 
 alpha = mean(colMeans(to_save[[1]][[1]][5e3:1e4, 1:N.l96]))
 
@@ -120,5 +120,5 @@ init[(n.X + 1):(n.X + n.theta)] = alpha
 ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
-plot.ts(pm)
-#save(ans, file = "l96_linch_1e6")
+#plot.ts(pm)
+save(ans, file = "l96_linch_1e6")
