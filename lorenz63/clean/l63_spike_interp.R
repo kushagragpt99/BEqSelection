@@ -230,7 +230,7 @@ n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 q = rep(0.1, n.theta) #runif(n.theta)
 q[non_zero] = 0.9
-n <- 5e5
+n <- 5e4
 
 X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(.6, 3)) # generating sample from Lorenz-63
 X = X_total[, (burn_in):(N + burn_in)]

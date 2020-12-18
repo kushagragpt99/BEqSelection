@@ -226,7 +226,7 @@ N = tail(seq.Y, 1)
 n.X = N.l96 * (N + 1)
 n.param = n.X + n.theta + n.sigma
 
-n <- 5e5
+n <- 5e4
 
 
 
