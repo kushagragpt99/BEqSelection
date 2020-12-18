@@ -126,8 +126,9 @@ MH.B <- function(index, init, n, scale, gamma, state) {
     return(ans)
 }
 
-linchpin <- function(n, init, scale_vec) {
+linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
+    Xlast = X_avg
     param_mat = matrix(, nrow = n, ncol = 2 * n.theta + n.sigma)
     
     scale.B = scale
@@ -176,7 +177,8 @@ linchpin <- function(n, init, scale_vec) {
     }
     #print(accept.prob / n)
     X_avg = X_avg / n
-    final_output = list(param_mat, X_avg, accept.prob / n)
+    Xlast = state[1:n.X]
+    final_output = list(param_mat, X_avg, accept.prob / n, Xlast)
     return(final_output)
 }
 
@@ -230,11 +232,11 @@ n.sigma = 3
 n.param = n.X + n.theta + n.sigma
 q = rep(0.1, n.theta) #runif(n.theta)
 q[non_zero] = 0.9
-n <- 5e4
+n <- 1e5
 
-X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(.6, 3)) # generating sample from Lorenz-63
-X = X_total[, (burn_in):(N + burn_in)]
-#load('burninX')
+#X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, c(10, 28, 8 / 3), diag(.6, 3)) # generating sample from Lorenz-63
+#X = X_total[, (burn_in):(N + burn_in)]
+load('burninX6_by_10')
 X = X[, 1:(N + 1)]
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
@@ -265,43 +267,47 @@ load('l63_linch_T_20_5e5_1')
 var1 = cov(to_save[[1]][[1]][, 1:33])
 scale_vec = 1.8 * sqrt(diag(var1))
 scale = scale_vec
-scale[ c(1)] = 0.7 * scale_vec[c(1)]
+scale[ c(1)] = 0.9 * scale_vec[c(1)]
 scale[ c(2)] = 1.2 * scale_vec[c(2)]
-scale[ c(3)] = 2.0 * scale_vec[c(3)]
-scale[ c(4)] = 1.2 * scale_vec[c(4)]
+scale[ c(3)] = 1.8 * scale_vec[c(3)]
+scale[ c(4)] = 1.3 * scale_vec[c(4)]
 scale[ c(5)] = 1.3 * scale_vec[c(5)]
-scale[ c(6)] = 0.7 * scale_vec[c(6)]
+scale[ c(6)] = 0.9 * scale_vec[c(6)]
 scale[ c(7)] = 0.4 * scale_vec[c(7)]
-scale[ c(8)] = 0.55 * scale_vec[c(8)]
+scale[ c(8)] = 0.6 * scale_vec[c(8)]
 scale[ c(9)] = 0.22 * scale_vec[c(9)]
-scale[ c(10)] = 0.25 * scale_vec[c(10)]
-scale[ c(11)] = 0.3 * scale_vec[c(11)]
+scale[ c(10)] = 0.3 * scale_vec[c(10)]
+scale[ c(11)] = 0.25 * scale_vec[c(11)]
 scale[ c(12)] = 0.25 * scale_vec[c(12)]
-scale[ c(13)] = 0.35 * scale_vec[c(13)]
-scale[ c(14)] = 0.5 * scale_vec[c(14)]
+scale[ c(13)] = 0.4 * scale_vec[c(13)]
+scale[ c(14)] = 0.45 * scale_vec[c(14)]
 scale[ c(15)] = 0.4 * scale_vec[c(15)]
-scale[ c(16)] = 0.22 * scale_vec[c(16)]
-scale[ c(17)] = 0.4 * scale_vec[c(17)]
+scale[ c(16)] = 0.28 * scale_vec[c(16)]
+scale[ c(17)] = 0.35 * scale_vec[c(17)]
 scale[ c(18)] = 0.2 * scale_vec[c(18)]
 scale[ c(19)] = 0.2 * scale_vec[c(19)]
 scale[ c(20)] = 0.25 * scale_vec[c(20)]
 scale[ c(21)] = 0.2 * scale_vec[c(21)]
-scale[ c(22)] = 0.6 * scale_vec[c(22)]
-scale[ c(23)] = 0.7 * scale_vec[c(23)]
-scale[ c(24)] = 0.6 * scale_vec[c(24)]
-scale[ c(25)] = 0.7 * scale_vec[c(25)]
-scale[ c(26)] = 1.2 * scale_vec[c(26)]
-scale[ c(27)] = 1.1 * scale_vec[c(27)]
-scale[ c(28)] = 0.5 * scale_vec[c(28)]
+scale[ c(22)] = 0.75 * scale_vec[c(22)]
+scale[ c(23)] = 0.9 * scale_vec[c(23)]
+scale[ c(24)] = 0.8 * scale_vec[c(24)]
+scale[ c(25)] = 0.85 * scale_vec[c(25)]
+scale[ c(26)] = 1.05 * scale_vec[c(26)]
+scale[ c(27)] = 1.05 * scale_vec[c(27)]
+scale[ c(28)] = 0.55 * scale_vec[c(28)]
 scale[ c(29)] = 0.7 * scale_vec[c(29)]
-scale[ c(30)] = 0.5 * scale_vec[c(30)]
-scale[ c(31)] = 0.45 * scale_vec[c(31)]
-scale[ c(32)] = 0.7 * scale_vec[c(32)]
-scale[ c(33)] = 0.7 * scale_vec[c(33)]
+scale[ c(30)] = 0.7 * scale_vec[c(30)]
+scale[ c(31)] = 0.6 * scale_vec[c(31)]
+scale[ c(32)] = 0.8 * scale_vec[c(32)]
+scale[ c(33)] = 0.9 * scale_vec[c(33)]
 
 
-scale.X = 0.0032 #0.002 ##################################### tried increasing this?
+scale.X = .0038 #0.002 ##################################### tried increasing this?
 
+# These values are generate ffrom the same code with difference scale and scale.X, which can be found in attr loaded with this file
+load('l63_linch_T_20_5e5_cwise_1_spikes_interp_diffuse_6_by_10_scale_try')
+init[(n.X + 1):(n.X + n.theta)] = colMeans(to_save[[1]][[1]][3e4:5e4, 1:(n.theta)])
+#init[1:n.X] = to_save[[1]][[2]]
 
 ans = linchpin(n, init)
 
@@ -316,7 +322,7 @@ attr = list('to' = to, 'tf' = tf, 'Nobs' = Nobs, 'del_t' = del_t, 'a4' = a4, 'b4
             'scale' = scale, 'scale.X' = scale.X)
 
 to_save = list(ans, chain_info)
-save(to_save,attr, file = "l63_linch_T_20_5e5_cwise_1_spikes_interp_diffuse_6_by_10_scale_try")
+save(to_save,attr, file = "l63_linch_T_20_1e5_cwise_1_spikes_interp_diffuse_6_by_10_scale_try")
 pm = ans[[1]][, 1:(n.sigma + n.theta)]
 
 print(matrix(colMeans(pm), nrow = 3))

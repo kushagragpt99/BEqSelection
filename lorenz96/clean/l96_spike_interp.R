@@ -226,7 +226,7 @@ N = tail(seq.Y, 1)
 n.X = N.l96 * (N + 1)
 n.param = n.X + n.theta + n.sigma
 
-n <- 5e4
+n <- 1e5
 
 
 
@@ -266,7 +266,7 @@ tau1 = sqrt(sigma_Y * max((n.theta ^ 2.1) / (100 * K), log(K))) / 2
 
 load('l96_linch_spike_5e2')
 var1 = cov(to_save[[1]][[1]][, 1:n.theta])
-scale_vec = 1.1 * sqrt(diag(var1))
+scale_vec = 1.2 * sqrt(diag(var1))
 
 scale = rep(n.theta)
 
@@ -276,22 +276,27 @@ scale[c(2)] = 3.2 * scale_vec[c(2)]
 scale[c(3)] = 12 * scale_vec[c(3)]
 scale[c(4)] = 5.7 * scale_vec[c(4)]
 scale[c(5)] = 0.7 * scale_vec[c(5)]
-scale[ c(6)] = 3.5 * scale_vec[c(6)]
-scale[ c(14, 16)] = 3 * scale_vec[c(14, 16)]
-scale[ c(9, 13, 18, 62)] = 2.5 * scale_vec[c(9, 13, 18, 62)]
-scale[ c(10)] = 0.4 * scale_vec[c(10)]
-scale[ c(8, 12, 29, 32, 55)] = 0.5 * scale_vec[c(8, 12, 29, 32, 55)]
-scale[ c(67)] = 0.3 * scale_vec[c(67)]
-scale[ c(21, 24, 25, 26, 27, 28, 30, 31, 35, 65)] = 0.6 * scale_vec[c(21, 24, 25, 26, 27, 28, 30, 31, 35, 65)]
-scale[ c(17, 19)] = 2.5 * scale_vec[c(17, 19)]
-scale[ c(7, 20, 61, 64)] = 2 * scale_vec[c(7, 20, 61, 64)]
-scale[ c(23)] = 1.8 * scale_vec[c(23)]
-scale[ c(49, 52)] = 0.7 * scale_vec[c(49, 52)]
-scale[ c(40, 42, 43)] = 1.2 * scale_vec[c(40, 42, 43)]
-scale[ c(22, 37, 38, 41, 45, 46, 47, 48, 49, 50, 54, 56, 58, 59, 60, 61)] = 1.5 * scale_vec[c(22, 37, 38, 41, 45, 46, 47, 48, 49, 50, 54, 56, 58, 59, 60, 61)]
-scale[ c(11, 15, 39, 53, 66, 68)] = 0.8 * scale_vec[c(11, 15, 39, 53, 66, 68)]
+scale[c(6)] = 3.5 * scale_vec[c(6)]
+scale[c(14, 16)] = 3 * scale_vec[c(14, 16)]
+scale[c(9, 13, 18, 62)] = 2.5 * scale_vec[c(9, 13, 18, 62)]
+scale[c(10)] = 0.4 * scale_vec[c(10)]
+scale[c(8, 12, 29, 32, 55)] = 0.5 * scale_vec[c(8, 12, 29, 32, 55)]
+scale[c(67)] = 0.3 * scale_vec[c(67)]
+scale[c(21, 24, 25, 26, 27, 28, 30, 31, 35, 65)] = 0.6 * scale_vec[c(21, 24, 25, 26, 27, 28, 30, 31, 35, 65)]
+scale[c(17, 19)] = 2.5 * scale_vec[c(17, 19)]
+scale[c(7, 20, 61, 64)] = 2 * scale_vec[c(7, 20, 61, 64)]
+scale[c(23)] = 1.8 * scale_vec[c(23)]
+scale[c(49, 52)] = 0.7 * scale_vec[c(49, 52)]
+scale[c(40, 42, 43)] = 1.2 * scale_vec[c(40, 42, 43)]
+scale[c(22, 37, 38, 41, 45, 46, 47, 48, 49, 50, 54, 56, 58, 59, 60, 61)] = 1.5 * scale_vec[c(22, 37, 38, 41, 45, 46, 47, 48, 49, 50, 54, 56, 58, 59, 60, 61)]
+scale[c(11, 15, 39, 53, 66, 68)] = 0.8 * scale_vec[c(11, 15, 39, 53, 66, 68)]
 
-scale.X = 0.0012
+scale.X = 0.0018
+
+# These values are generate ffrom the same code with difference scale and scale.X, which can be found in attr loaded with this file
+load('l96_5e5_cwise_spikes_interp_diffuse_init_theta_try')
+init[(n.X + 1):(n.X + n.theta)] = colMeans(to_save[[1]][[1]][3e4:5e4, 1:(n.theta)])
+#init[1:n.X] = to_save[[1]][[2]]
 
 ans = linchpin(n, init)
 
@@ -306,7 +311,7 @@ attr = list('to' = to, 'tf' = tf, 'Nobs' = Nobs, 'N.l96' = N.l96, 'del_t' = del_
             'scale' = scale, 'scale.X' = scale.X)
 
 to_save = list(ans, chain_info)
-save(to_save,attr, file = "l96_5e5_cwise_spikes_interp_diffuse_init_theta_try")
+save(to_save,attr, file = "l96_1e5_cwise_spikes_interp_diffuse_init_theta_try")
 pm = ans[[1]][, 1:(n.sigma + n.theta)]
 
 print(matrix(colMeans(pm), nrow = N.l96))
