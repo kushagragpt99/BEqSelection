@@ -44,8 +44,8 @@ ludfun <- function(state) {
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = 6)
-    scale = rep(.0013, n.X + n.theta)
-    scale[(n.X + 1):(n.X + n.theta)] = .06
+    scale = rep(.0012, n.X + n.theta)
+    scale[(n.X + 1):(n.X + n.theta)] = .05
     accept.prob = 0
 
     for (i in 1:n) {
@@ -110,7 +110,7 @@ inv.lam_o = solve(lam_o)
 #beta2 = 0.5
 #beta3 = 0.5
 a4 = 2
-b4 = 6
+b4 = .6
 mu_truth = c(10, 28, 8 / 3)
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
@@ -124,9 +124,9 @@ n.X = 3 * (N + 1)
 n.theta = 3
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
-n = 2e4
+n = 1e6
 
-load('l63_linch_T_20_5e5_cwise_1_spikes_interp_diffuse_6_by_10_scale_try')
+load('l63_linch_T_20_1e5_cwise_1_spikes_interp_diffuse_6_by_10_scale_try')
 pm = colMeans(to_save[[1]][[1]])
 prior_mean = c(pm[4], pm[2], - pm[9])
 prior_cov = diag(3,3)
@@ -134,7 +134,7 @@ prior_cov = diag(3,3)
 #X_total = euler_maruyama(c(0,0,25), del_t, N + burn_in, mu_truth, diag(6, 3)) # generating sample from Lorenz-63
 #X = X_total[, (burn_in):(N + burn_in)]
 
-load('burninX')
+load('burninX6_by_10')
 X = X[, 1:(N + 1)]
 Y = X[, seq(2, N + 1, N / K)] + t(rmvnorm(K, mean = rep(0, 3), sigma = R)) # observations from Lorenz-63
 init = numeric(n.X + n.theta)
@@ -166,11 +166,11 @@ init[(1:n.X)] <- as.numeric(X.interp)
 ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
-#plot.ts(pm)
+plot.ts(pm)
 
 chain_info = capture.output(cat("no of samples from mc is ", n, " \n starting from interpolation ", "\n priors gamma", " time period ",
                                 tf, " lam_0 is ", lam_o[1, 1], "nobs is ", Nobs, "sigma is ", 6, " R is ", R[1, 1]))
 
 print(chain_info)
 to_save = list(ans, chain_info)
-save(to_save, file = "l63_interp_2e4")
+save(to_save, file = "l63_interp_1e6")

@@ -122,7 +122,7 @@ n.sigma = N.l96
 n.param = n.X + n.theta + n.sigma
 n = 1e6
 
-load('l96_5e5_cwise_spikes_interp_diffuse_init_theta_try')
+load('l96_1e5_cwise_spikes_interp_diffuse_init_theta_try')
 alpha = mean(colMeans(to_save[[1]][[1]][5e3:1e4,1:N.l96]))
 
 
@@ -161,4 +161,4 @@ ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
 #plot.ts(pm)
-save(ans, file = "l96_linch_1e4_interp")
+save(ans, file = "l96_linch_1e6_interp")
