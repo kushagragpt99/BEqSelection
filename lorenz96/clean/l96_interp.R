@@ -44,8 +44,8 @@ ludfun <- function(state) {
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.0022, n.X + n.theta) # 0.003
-    scale[(n.X + 1):(n.X + n.theta)] = 0.38 # 0.5
+    scale = rep(0.002 , n.X + n.theta) # 0.0022
+    scale[(n.X + 1):(n.X + n.theta)] = 0.35 # 0.38
     accept.prob = 0
     state = init
     for (i in 1:n) {
@@ -135,6 +135,10 @@ init = numeric(n.X + n.theta)
 #init[1:n.X] = ans[[3]]
 init[(n.X + 1):(n.X + n.theta)] = alpha
 
+load('l96_linch_2e6_interp_part1')
+init[1:n.X] = ans[[3]]
+init[(n.X + 1):(n.X + n.theta)] = ans[[1]][1e6,1]
+
 # STARTING FROM TRUTH
 #init[(1:n.X)] <- as.numeric(X) #+ rnorm(n.X) #runif(n.param, 0, 5)
 #init[(n.X + 1):(n.X + n.theta)] <- rnorm(1, alpha, 0.5) # random initial values for MCMC
@@ -161,4 +165,4 @@ ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
 #plot.ts(pm)
-save(ans, file = "l96_linch_2e6_interp_part1")
+save(ans, file = "l96_linch_2e6_interp_part2")
