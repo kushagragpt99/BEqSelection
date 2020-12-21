@@ -66,12 +66,12 @@ Type 'q()' to quit R.
 +     scale = rep(0.0022, n.X + n.theta) # 0.003
 +     scale[(n.X + 1):(n.X + n.theta)] = 0.38 # 0.5
 +     accept.prob = 0
-+ 
++     state = init
 +     for (i in 1:n) {
 +         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 + 
-+         #if (i == 5e4) {
-+         #scale[1:n.X] = 0.05
++         #if (i == floor(n/2)) {
++         #scale = scale*0.7
 +         #}
 + 
 +         chain = metrop(ludfun, init, 1, scale = scale)
@@ -94,10 +94,10 @@ Type 'q()' to quit R.
 +         param_mat[i, 2:(n.sigma + n.theta)] = Sigma
 +         init = state
 +     }
-+ 
++     Xfinal = state[1:n.X]
 +     print(accept.prob / n)
 +     X_avg = X_avg / n
-+     final_output = list(param_mat, X_avg)
++     final_output = list(param_mat, X_avg, Xfinal)
 +     return(final_output)
 + }
 > 
@@ -192,8 +192,8 @@ Type 'q()' to quit R.
 > colMeans(pm)
 [1] 8.2625490 0.8010801 1.1113264 0.9502939 1.1993507
 > #plot.ts(pm)
-> save(ans, file = "l96_linch_1e6_interp")
+> save(ans, file = "l96_linch_2e6_interp_part1")
 > 
 > proc.time()
      user    system   elapsed 
-32442.925    59.801 32679.480 
+33175.755   151.655 33731.915 

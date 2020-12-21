@@ -66,14 +66,13 @@ Type 'q()' to quit R.
 +     scale = rep(.0012, n.X + n.theta)
 +     scale[(n.X + 1):(n.X + n.theta)] = .05
 +     accept.prob = 0
-+ 
++     state = init
 +     for (i in 1:n) {
 + 
 +         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 + 
-+         #if (i == 1e4) {
-+             #scale[1:n.X] = 0.01
-+             #scale[(n.X + 1):(n.X + n.theta)] = 0.8
++         #if (i == floor(n / 2)) {
++             #scale = scale * 0.7
 +         #}
 + 
 +         chain = metrop(ludfun, init, 1, scale = scale)
@@ -95,10 +94,10 @@ Type 'q()' to quit R.
 +         param_mat[i, 4:6] = Sigma
 +         init = state
 +     }
-+ 
++     Xfinal = state[1:n.X]
 +     print(accept.prob / n)
 +     X_avg = X_avg / n
-+     final_output = list(param_mat, X_avg)
++     final_output = list(param_mat, X_avg, Xfinal)
 +     return(final_output)
 + }
 > 
@@ -190,25 +189,3 @@ Type 'q()' to quit R.
 [1] 5.00000e+05 1.92406e-01
 [1] 6.0000e+05 1.8708e-01
 [1] 7.0000e+05 1.8224e-01
-[1] 8.000000e+05 1.782037e-01
-[1] 9.000000e+05 1.750678e-01
-[1] 1.00000e+06 1.71463e-01
-[1] 0.171463
-> pm = ans[[1]]
-> colMeans(pm)
-[1]  9.917390 27.866258  2.634356  1.636608  2.350088  2.349991
-> plot.ts(pm)
-> 
-> chain_info = capture.output(cat("no of samples from mc is ", n, " \n starting from interpolation ", "\n priors gamma", " time period ",
-+                                 tf, " lam_0 is ", lam_o[1, 1], "nobs is ", Nobs, "sigma is ", 6, " R is ", R[1, 1]))
-> 
-> print(chain_info)
-[1] "no of samples from mc is  1e+06  "                                               
-[2] " starting from interpolation  "                                                  
-[3] " priors gamma  time period  20  lam_0 is  10 nobs is  20 sigma is  6  R is  0.05"
-> to_save = list(ans, chain_info)
-> save(to_save, file = "l63_interp_1e6")
-> 
-> proc.time()
-     user    system   elapsed 
-43839.473   549.559 44577.029 
