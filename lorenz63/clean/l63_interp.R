@@ -47,14 +47,13 @@ linchpin <- function(n, init) {
     scale = rep(.0012, n.X + n.theta)
     scale[(n.X + 1):(n.X + n.theta)] = .05
     accept.prob = 0
-
+    state = init
     for (i in 1:n) {
 
         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 
-        #if (i == 1e4) {
-            #scale[1:n.X] = 0.01
-            #scale[(n.X + 1):(n.X + n.theta)] = 0.8
+        #if (i == floor(n / 2)) {
+            #scale = scale * 0.7
         #}
 
         chain = metrop(ludfun, init, 1, scale = scale)
@@ -76,10 +75,10 @@ linchpin <- function(n, init) {
         param_mat[i, 4:6] = Sigma
         init = state
     }
-
+    Xfinal = state[1:n.X]
     print(accept.prob / n)
     X_avg = X_avg / n
-    final_output = list(param_mat, X_avg)
+    final_output = list(param_mat, X_avg, Xfinal)
     return(final_output)
 }
 
@@ -166,11 +165,5 @@ init[(1:n.X)] <- as.numeric(X.interp)
 ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
-plot.ts(pm)
 
-chain_info = capture.output(cat("no of samples from mc is ", n, " \n starting from interpolation ", "\n priors gamma", " time period ",
-                                tf, " lam_0 is ", lam_o[1, 1], "nobs is ", Nobs, "sigma is ", 6, " R is ", R[1, 1]))
-
-print(chain_info)
-to_save = list(ans, chain_info)
-save(to_save, file = "l63_interp_1e6")
+save(ans, file = "l63_interp_2e6_part1")
