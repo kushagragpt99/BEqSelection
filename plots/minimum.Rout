@@ -1,0 +1,117 @@
+
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> set.seed(1)
+> library(mcmcse)
+mcmcse: Monte Carlo Standard Errors for MCMC
+Version 1.4-1 created on 2020-01-29.
+copyright (c) 2012, James M. Flegal, University of California, Riverside
+                    John Hughes, University of Colorado, Denver
+                    Dootika Vats, University of Warwick
+                    Ning Dai, University of Minnesota
+ For citation information, type citation("mcmcse").
+ Type help("mcmcse-package") to get started.
+
+> library(mvtnorm)
+> source('SimTools/R/supp.R')
+> source('SimTools/R/Smcmcclass.R')
+> 
+> ## LORENZ 63
+> # TRUTH
+> 
+> # spike slab table
+> load('L63/truth/l63_linch_T_20_5e4_cwise_1_spikes_init_theta_try')
+> gamma_est = colMeans(to_save[[1]][[1]][, (attr$n.sigma + attr$n.theta + 1):(attr$n.sigma + 2 * attr$n.theta)])
+> print(matrix(gamma_est, nrow = 3))
+        [,1]    [,2]    [,3]    [,4]    [,5]    [,6]    [,7]    [,8]    [,9]
+[1,] 1.00000 1.00000 0.01626 0.01120 0.01020 0.01124 0.01126 0.01112 0.01106
+[2,] 1.00000 0.87548 0.02202 0.01178 0.01090 0.01138 0.00982 0.01122 0.86860
+[3,] 0.01356 0.01238 1.00000 0.01068 0.01106 0.01108 0.86344 0.01080 0.01138
+       [,10]   [,11]
+[1,] 0.01278 0.01106
+[2,] 0.01514 0.01090
+[3,] 0.01074 0.01134
+> 
+> # inference model density plots for parameters with gamma >= 0.5
+> load('L63/truth/l63_linch_1e6')
+> params = to_save[[1]][[1]]
+> n = dim(params)[1]
+> params = params[(n/4+1):n,]  # remove n/4 burnin
+> selected_params = attr$mu_truth[which(gamma_est >= 0.5)]
+> true_params = c(10, 28, 8 / 3, .6, .6, .6)
+> names = c(expression(sigma), expression(rho), expression(beta), expression(Sigma[x]), expression(Sigma[y]), expression(Sigma[z]))
+> for (i in 1:length(true_params)) {
++     print(i)
++     data = Smcmc(params[, i])
++     pdf(file = paste('L63/truth/L63_truth_density',i,'.pdf',sep = '_'))
++     plot(data, Q = c(0.05, 0.95),xlim = range(data,true_params[i]), main = names[i], xlab = " ")
++     abline(v = true_params[i], col = 'red')
++     dev.off()
++ }
+[1] 1
+[1] 2
+[1] 3
+[1] 4
+[1] 5
+[1] 6
+> 
+> ## LORENZ 96
+> # TRUTH
+> 
+> ## spike slab table
+> load('L96/truth/l96_5e4_cwise_spikes_truth_diffuse_try')
+> gamma_est = colMeans(to_save[[1]][[1]][, (attr$n.sigma + attr$n.theta + 1):(attr$n.sigma + 2 * attr$n.theta)])
+> print(matrix(gamma_est, nrow = 4))
+     [,1]    [,2]    [,3]    [,4]    [,5]    [,6]    [,7]    [,8]    [,9]
+[1,]    1 0.94084 0.01128 0.01286 0.00726 0.00320 0.00334 0.00328 0.00310
+[2,]    1 0.01562 0.97730 0.01320 0.00908 0.00360 0.00312 0.00346 0.00300
+[3,]    1 0.00794 0.00826 0.78192 0.00714 0.00354 0.00354 0.00402 0.00300
+[4,]    1 0.01678 0.00680 0.00908 1.00000 0.00344 0.00314 0.00304 0.00408
+       [,10]   [,11]   [,12]   [,13]   [,14]   [,15]   [,16]   [,17]
+[1,] 0.00326 0.00366 0.00328 0.00270 1.00000 1.00000 0.00868 0.00368
+[2,] 0.00348 1.00000 1.00000 0.00358 0.00334 0.00316 0.01594 0.00356
+[3,] 1.00000 0.00406 0.00346 0.00350 1.00000 0.00322 0.02704 0.00334
+[4,] 0.00354 1.00000 0.00338 1.00000 0.00366 0.00312 0.00962 0.00354
+> 
+> # inference model density plots for parameters with gamma >= 0.5
+> load('L96/truth/l96_linch_1e6')
+> params = ans[[1]]
+> n = dim(params)[1]
+> params = params[(n / 4 + 1):n,] # remove n/4 burnin
+> selected_params = attr$mu_truth[which(gamma_est >= 0.5)]
+> true_params = c(8, 0.5, 0.5, 0.5, 0.5)
+> names = c(expression(theta), expression(Sigma[1]), expression(Sigma[2]), expression(Sigma[3]), expression(Sigma[4]))
+> for (i in 1:length(true_params)) {
++     print(i)
++     data = Smcmc(params[, i])
++     pdf(file = paste('L96/truth/L96_truth_density', i, '.pdf', sep = '_'))
++     plot(data, Q = c(0.05, 0.95), xlim = range(data, true_params[i]), main = names[i], xlab = " ")
++     abline(v = true_params[i], col = 'red')
++     dev.off()
++ }
+[1] 1
+[1] 2
+[1] 3
+[1] 4
+[1] 5
+> 
+> 
+> proc.time()
+   user  system elapsed 
+105.468  26.999 143.225 
