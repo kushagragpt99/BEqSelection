@@ -52,9 +52,10 @@ linchpin <- function(n, init) {
 
         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 
-        #if (i == floor(n / 2)) {
-            #scale = scale * 0.7
-        #}
+        if (i == floor((4*n) / 5)) {
+            scale[1:n.X] = 0.0009
+            scale[(n.X+1):(n.X+n.theta)] = 0.044
+        }
 
         chain = metrop(ludfun, init, 1, scale = scale)
         state = chain$batch
@@ -123,7 +124,7 @@ n.X = 3 * (N + 1)
 n.theta = 3
 n.sigma = 3
 n.param = n.X + n.theta + n.sigma
-n = 1e6
+n = 5e6
 
 load('l63_linch_T_20_1e5_cwise_1_spikes_interp_diffuse_6_by_10_scale_try')
 pm = colMeans(to_save[[1]][[1]])
@@ -166,4 +167,4 @@ ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
 
-save(ans, file = "l63_interp_2e6_part1")
+save(ans, file = "l63_interp_5e6")

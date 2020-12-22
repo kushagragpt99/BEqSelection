@@ -44,16 +44,17 @@ ludfun <- function(state) {
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.002 , n.X + n.theta) # 0.0022
-    scale[(n.X + 1):(n.X + n.theta)] = 0.35 # 0.38
+    scale = rep(0.0021 , n.X + n.theta) # 0.002
+    scale[(n.X + 1):(n.X + n.theta)] = 0.38 # 0.35
     accept.prob = 0
     state = init
     for (i in 1:n) {
         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 
-        #if (i == floor(n/2)) {
-        #scale = scale*0.7
-        #}
+        if (i == floor((4*n)/5)) {
+            scale[1:n.X] = 0.0018
+            scale[(n.X+1):(n.X+n.theta)] = .32
+        }
 
         chain = metrop(ludfun, init, 1, scale = scale)
         state = chain$batch
@@ -120,7 +121,7 @@ n.X = N.l96 * (N + 1)
 n.theta = 1
 n.sigma = N.l96
 n.param = n.X + n.theta + n.sigma
-n = 1e6
+n = 5e6
 
 load('l96_1e5_cwise_spikes_interp_diffuse_init_theta_try')
 alpha = mean(colMeans(to_save[[1]][[1]][5e3:1e4,1:N.l96]))
@@ -135,9 +136,9 @@ init = numeric(n.X + n.theta)
 #init[1:n.X] = ans[[3]]
 init[(n.X + 1):(n.X + n.theta)] = alpha
 
-load('l96_linch_2e6_interp_part1')
-init[1:n.X] = ans[[3]]
-init[(n.X + 1):(n.X + n.theta)] = ans[[1]][1e6,1]
+#load('l96_linch_2e6_interp_part2')
+#init[1:n.X] = ans[[3]]
+#init[(n.X + 1):(n.X + n.theta)] = ans[[1]][1e6,1]
 
 # STARTING FROM TRUTH
 #init[(1:n.X)] <- as.numeric(X) #+ rnorm(n.X) #runif(n.param, 0, 5)
@@ -165,4 +166,4 @@ ans = linchpin(n, init)
 pm = ans[[1]]
 colMeans(pm)
 #plot.ts(pm)
-save(ans, file = "l96_linch_2e6_interp_part2")
+save(ans, file = "l96_linch_5e6_interp")
