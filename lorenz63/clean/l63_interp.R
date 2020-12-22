@@ -52,9 +52,9 @@ linchpin <- function(n, init) {
 
         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 
-        if (i == floor((4*n) / 5)) {
-            scale[1:n.X] = 0.0009
-            scale[(n.X+1):(n.X+n.theta)] = 0.044
+        if (i <= floor((4*n) / 5)) {
+            scale[1:n.X] = (0.0012 - 0.0009) * (5 * i) / (4 * n)
+            scale[(n.X+1):(n.X+n.theta)] = (0.05-0.044)*(5*i)/(4*n)
         }
 
         chain = metrop(ludfun, init, 1, scale = scale)

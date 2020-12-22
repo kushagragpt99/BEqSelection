@@ -44,16 +44,16 @@ ludfun <- function(state) {
 linchpin <- function(n, init) {
     X_avg = numeric(length = n.X)
     param_mat = matrix(, nrow = n, ncol = n.theta + n.sigma)
-    scale = rep(0.0021 , n.X + n.theta) # 0.002
+    scale = rep(0.0022 , n.X + n.theta) # 0.002
     scale[(n.X + 1):(n.X + n.theta)] = 0.38 # 0.35
     accept.prob = 0
     state = init
     for (i in 1:n) {
         if (i %% (n / 10) == 0) print(c(i, accept.prob / i))
 
-        if (i == floor((4*n)/5)) {
-            scale[1:n.X] = 0.0018
-            scale[(n.X+1):(n.X+n.theta)] = .32
+        if (i <= floor((4*n)/5)) {
+            scale[1:n.X] =(0.0022- 0.0018)*(5*i)/(4*n)
+            scale[(n.X+1):(n.X+n.theta)] = (0.38-.32)*(5*i)/(4*n)
         }
 
         chain = metrop(ludfun, init, 1, scale = scale)
