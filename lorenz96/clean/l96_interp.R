@@ -26,7 +26,7 @@ ludfun <- function(state) {
     X_t = X_n[, seq(2, N + 1, N / K)]
 
     #######################################################################
-    p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE)))
+    p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))) + +dmvnorm(t(X_n[, 1] - tau_o), sigma = lam_o, log = TRUE)
     #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
     ######################################################################
     p2 = dnorm(theta, mean = alpha, sd = beta, log = TRUE)
