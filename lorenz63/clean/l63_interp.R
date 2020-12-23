@@ -53,8 +53,8 @@ linchpin <- function(n, init) {
         if (i %% (n / 100) == 0) print(c(i, accept.prob / i))
 
         if (i <= floor((4*n) / 5)) {
-            scale[1:n.X] = .0012 - (0.0012 - 0.0009) * (5 * i) / (4 * n)
-            scale[(n.X+1):(n.X+n.theta)] = .05 - (0.05-0.044)*(5*i)/(4*n)
+            scale[1:n.X] = .0012 - (0.0012 - 0.0006) * (5 * i) / (4 * n)
+            scale[(n.X+1):(n.X+n.theta)] = .05 - (0.05-0.032)*(5*i)/(4*n)
         }
 
         chain = metrop(ludfun, init, 1, scale = scale)
@@ -109,8 +109,8 @@ inv.lam_o = solve(lam_o)
 #beta1 = 0.5
 #beta2 = 0.5
 #beta3 = 0.5
-a4 = 2
-b4 = .6
+a4 = 10 #2
+b4 = (a4-1)*0.6 #.6
 mu_truth = c(10, 28, 8 / 3)
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y

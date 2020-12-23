@@ -26,7 +26,7 @@ ludfun <- function(state) {
     X_t = X_n[, seq(2, N + 1, N / K)]
 
     #######################################################################
-    p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))) + +dmvnorm(t(X_n[, 1] - tau_o), sigma = lam_o, log = TRUE)
+    p1 = (sum(dmvnorm(t(Y - X_t), sigma = R, log = TRUE))) +dmvnorm(t(X_n[, 1] - tau_o), sigma = lam_o, log = TRUE)
     #- 0.5 * t(t(t(X_n[, 1])) - tau_o) %*% inv.lam_o %*% (t(t(X_n[, 1])) - tau_o))
     ######################################################################
     p2 = dnorm(theta, mean = alpha, sd = beta, log = TRUE)
@@ -52,8 +52,8 @@ linchpin <- function(n, init) {
         if (i %% (n / 100) == 0) print(c(i, accept.prob / i))
 
         if (i <= floor((4*n)/5)) {
-            scale[1:n.X] =.0022 - (0.0022- 0.0018)*(5*i)/(4*n)
-            scale[(n.X+1):(n.X+n.theta)] = .38 - (0.38-.32)*(5*i)/(4*n)
+            scale[1:n.X] =.0022 - (0.0022- 0.0011)*(5*i)/(4*n)
+            scale[(n.X+1):(n.X+n.theta)] = .38 - (0.38-.2)*(5*i)/(4*n)
         }
 
         chain = metrop(ludfun, init, 1, scale = scale)
@@ -106,8 +106,8 @@ lam_o = diag(10, N.l96) # prior covariance matrix of X[0]
 inv.lam_o = solve(lam_o)
 alpha = 8 # changed later
 beta = 2
-a4 = 2
-b4 = .5
+a4 = 10 #2
+b4 = (a4-1)*0.5 #.5
 
 
 K = (tf - to) * Nobs # no of real life observations, i.e. size of Y
