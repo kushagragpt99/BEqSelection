@@ -1,0 +1,3 @@
+/Library/Frameworks/R.framework/Resources/bin/BATCH: line 60: 54697 Killed: 9               ${R_HOME}/bin/R -f ${in} ${opts} ${R_BATCH_OPTIONS} > ${out} 2>&1
+/Library/Frameworks/R.framework/Resources/bin/BATCH: line 60: 29977 Killed: 9               ${R_HOME}/bin/R -f ${in} ${opts} ${R_BATCH_OPTIONS} > ${out} 2>&1
+/Library/Frameworks/R.framework/Resources/bin/BATCH: line 60: 30408 Terminated: 15          ${R_HOME}/bin/R -f ${in} ${opts} ${R_BATCH_OPTIONS} > ${out} 2>&1
